@@ -31,12 +31,12 @@ bool got_update = false;        // contains firmware uploaded flag
 bool got_config = false;        // contains configuration updated flag 
 byte connect_attempts = 0;      // contains connection attempts, increases when client was disconnected
 
-DNSServer				dnsServer;
-WiFiClient			wifiClient;
-PubSubClient		mqttClient(wifiClient);
+DNSServer       dnsServer;
+WiFiClient      wifiClient;
+PubSubClient    mqttClient(wifiClient);
 AsyncWebServer  httpServer(PORT_HTTP);
-IPAddress				wifi_AP_IP(192, 168, 4, 1);
-IPAddress				wifi_AP_MASK(255, 255, 255, 0);
+IPAddress       wifi_AP_IP(192, 168, 4, 1);
+IPAddress       wifi_AP_MASK(255, 255, 255, 0);
 Config          config;
 
 WiFiEventHandler softAPModeStationConnectedHandler;
