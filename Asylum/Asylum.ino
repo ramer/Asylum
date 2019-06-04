@@ -17,8 +17,8 @@
 
 
 #define WIFI_POWER              20.5
-#define PORT_DNS					      53
-#define PORT_HTTP					      80
+#define PORT_DNS                53
+#define PORT_HTTP               80
 
 String id;
 String idsuffix;
