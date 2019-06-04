@@ -16,20 +16,20 @@
 //#define DEBUG_CORE
 
 
-#define WIFI_POWER              20.5
-#define PORT_DNS					      53
-#define PORT_HTTP					      80
+#define WIFI_POWER                    20.5
+#define PORT_DNS					            53
+#define PORT_HTTP					            80
 
 String id;
 String idsuffix;
 
-bool spiffs_ready = false;      // contains SPIFFS availability flag
-bool config_ready = false;      // contains config.loadConfig() result;
-bool dnsserver_ready = false;   // contains config.loadConfig() result;
-bool is_updating = false;       // contains firmware uploading flag
-bool got_update = false;        // contains firmware uploaded flag 
-bool got_config = false;        // contains configuration updated flag 
-byte connect_attempts = 0;      // contains connection attempts, increases when client was disconnected
+bool spiffs_ready = false;           // contains SPIFFS availability flag
+bool config_ready = false;           // contains config.loadConfig() result;
+bool dnsserver_ready = false;        // contains config.loadConfig() result;
+bool is_updating = false;            // contains firmware uploading flag
+bool got_update = false;            // contains firmware uploaded flag 
+bool got_config = false;            // contains configuration updated flag 
+ulong disconnectedtime = millis();  // contains time, when client was disconnected
 
 DNSServer				dnsServer;
 WiFiClient			wifiClient;
@@ -66,11 +66,11 @@ void setup() {
   WiFi.setOutputPower(WIFI_POWER);
   debug("done \n");
 
-  softAPModeStationConnectedHandler = WiFi.onSoftAPModeStationConnected(&WiFi_onSoftAPModeStationConnected);
+  softAPModeStationConnectedHandler =    WiFi.onSoftAPModeStationConnected(&WiFi_onSoftAPModeStationConnected);
   softAPModeStationDisconnectedHandler = WiFi.onSoftAPModeStationDisconnected(&WiFi_onSoftAPModeStationDisconnected);
-  stationModeConnectedHandler = WiFi.onStationModeConnected(&WiFi_onStationModeConnected);
-  stationModeGotIPHandler = WiFi.onStationModeGotIP(&WiFi_onStationModeGotIP);
-  stationModeDisconnectedHandler = WiFi.onStationModeDisconnected(&WiFi_onStationModeDisconnected);
+  stationModeConnectedHandler =          WiFi.onStationModeConnected(&WiFi_onStationModeConnected);
+  stationModeGotIPHandler =              WiFi.onStationModeGotIP(&WiFi_onStationModeGotIP);
+  stationModeDisconnectedHandler =       WiFi.onStationModeDisconnected(&WiFi_onStationModeDisconnected);
 
   // Initialize config
   debug("Mounting SPIFFS ... ");
@@ -78,13 +78,11 @@ void setup() {
   if (spiffs_ready) {
     debug("success \n");
     config_ready = config.loadConfig();
-    if (config_ready) debug("Initial mode is %u \n", config.current["mode"].toInt());
-  }
-  else {
+  } else {
     debug("error \n");
     debug("WARNING. Configuration files cannot be load/save. \n");
   }
-
+   
 
   //TODO Initialize devices
 
@@ -94,16 +92,16 @@ void setup() {
   httpServer.begin();
   debug("started \n");
 
-  if ((WiFi.getMode() & WIFI_AP) != 0) {
-    StartAP();
-  }
-  if (((WiFi.getMode() & WIFI_STA) != 0)) {
-    StartSTA();
-  }
-    
-  debug("Current WiFi mode is %u \n", WiFi.getMode());
+  if (WiFi.getMode() == WIFI_AP_STA) {
+    debug("WiFi is on mixed (AP+STA) mode \n");
 
-  debug("Setup done. Free heap size: %u \n\n", ESP.getFreeHeap());
+    debug("Scanning WiFi networks ... ");
+    WiFi.scanDelete();
+    int n = WiFi.scanNetworks(false, true);
+    debug("done. Found %u networks \n", n);
+  }
+
+  debug("Setup done. Free heap size: %u \n", ESP.getFreeHeap());
 }
 
 
@@ -111,7 +109,7 @@ void loop() {
   byte mode = config.current["mode"].toInt();
   bool APEnabled = ((WiFi.getMode() & WIFI_AP) != 0);
   bool STAEnabled = ((WiFi.getMode() & WIFI_STA) != 0);
-
+  
   // DO NOT DO ANYTHING WHILE UPDATING
   if (is_updating) return;
 
@@ -126,14 +124,15 @@ void loop() {
       if (!APEnabled) StartAP();
       if (STAEnabled) StopSTA();
     }
-    else if (mode == 1 || mode == 2) { // Client or MQTT client mode
+
+    else if (mode == 1 || mode == 2) { // CLient or MQTT client mode
       if (!STAEnabled) StartSTA();
 
       if (WiFi.isConnected()) {
-        if (APEnabled && WiFi.softAPgetStationNum() == 0) StopAP();
+        if (APEnabled) StopAP();
       }
       else {
-        if (connect_attempts >= 10) { // start AP when client if disconnected for 10 secs
+        if (millis() - disconnectedtime > 10000) { // start AP when client if disconnected for 10 secs
           if (!APEnabled) StartAP();
         }
       }
@@ -148,7 +147,10 @@ void loop() {
 void StartAP() {
   WiFi.enableAP(true);
 
-  ScanNetworks();
+  debug("Scanning WiFi networks ... ");
+  WiFi.scanDelete();
+  int n = WiFi.scanNetworks(false, true); // mode became WIFI_AP_STA or WIFI_STA
+  debug("done. Found %u networks \n", n);
 
   debug("Starting access point ... ");
   WiFi.softAPConfig(wifi_AP_IP, wifi_AP_IP, wifi_AP_MASK);
@@ -164,7 +166,7 @@ void StopAP() {
 }
 
 void StartSTA() {
-  if (config_ready && config.current["apssid"].length() != 0) {
+  if (config.current["apssid"].length() != 0) {
     debug("Connecting to access point: %s , password: %s \n", config.current["apssid"].c_str(), config.current["apkey"].c_str());
     WiFi.begin(config.current["apssid"].c_str(), config.current["apkey"].c_str());
     WiFi.setAutoConnect(true);
@@ -183,19 +185,7 @@ void StopSTA() {
   debug("stopped \n");
 }
 
-void ScanNetworks() {
-  // Do scan when
-  //     WiFi is not client mode        OR   if client    is   connected  or    client     is    idle
-  if (((WiFi.getMode() & WIFI_STA) == 0) || (WiFi.status() == WL_CONNECTED || WiFi.status() == WL_IDLE_STATUS)) { // in other case STA will be disconnected
-    WiFiMode_t lastmode = WiFi.getMode();   // remember last mode
-    debug("Scanning WiFi networks ... ");
-    int n = WiFi.scanNetworks(false, true); // mode became WIFI_AP_STA or WIFI_STA
-    debug("done. Found %u networks \n", n);
-    WiFi.mode(lastmode);                    // set last mode back
-  }
-}
-
-void WiFi_onSoftAPModeStationConnected(const WiFiEventSoftAPModeStationConnected& evt) {
+void WiFi_onSoftAPModeStationConnected(const WiFiEventSoftAPModeStationConnected &evt) {
   String mac; for (byte i = 0; i < sizeof(evt.mac); ++i) mac += String(evt.mac[i], HEX);
   debug("Access point client connected: %s \n", mac.c_str());
 
@@ -206,7 +196,7 @@ void WiFi_onSoftAPModeStationConnected(const WiFiEventSoftAPModeStationConnected
   debug("started \n");
 }
 
-void WiFi_onSoftAPModeStationDisconnected(const WiFiEventSoftAPModeStationDisconnected& evt) {
+void WiFi_onSoftAPModeStationDisconnected(const WiFiEventSoftAPModeStationDisconnected &evt) {
   String mac; for (byte i = 0; i < sizeof(evt.mac); ++i) mac += String(evt.mac[i], HEX);
   debug("Access point client disconnected: %s \n", mac.c_str());
 
@@ -216,12 +206,11 @@ void WiFi_onSoftAPModeStationDisconnected(const WiFiEventSoftAPModeStationDiscon
   debug("stopped \n");
 }
 
-void WiFi_onStationModeConnected(const WiFiEventStationModeConnected& evt) {
+void WiFi_onStationModeConnected(const WiFiEventStationModeConnected &evt) {
   debug("Connected to access point: %s \n", evt.ssid.c_str());
-  connect_attempts = 0;
 }
 
-void WiFi_onStationModeGotIP(const WiFiEventStationModeGotIP& evt) {
+void WiFi_onStationModeGotIP(const WiFiEventStationModeGotIP &evt) {
   debug("Got client IP address: %s \n", evt.ip.toString().c_str());
 
   if (config_ready && config.current["mode"].toInt() == 2) {
@@ -263,8 +252,8 @@ void mqttClient_connect() {
   //  5 : MQTT_CONNECT_UNAUTHORIZED - the client was not authorized to connect
 }
 
-void WiFi_onStationModeDisconnected(const WiFiEventStationModeDisconnected& evt) {
-  debug("Disconnected from access point: %s, reason: %u, connect attempt: %u \n", evt.ssid.c_str(), evt.reason, connect_attempts);
-  connect_attempts += 1;
+void WiFi_onStationModeDisconnected(const WiFiEventStationModeDisconnected &evt) {
+  debug("Disconnected from access point: %s, reason: %u \n", evt.ssid.c_str(), evt.reason);
+  disconnectedtime = millis();
   if (config_ready && config.current["mode"].toInt() == 2) mqttClient.disconnect();
 }

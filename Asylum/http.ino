@@ -118,7 +118,7 @@ void handleFileUpload(AsyncWebServerRequest *request, const String& filename, si
   if (index == 0) {
     debug("Upload started: %s \n", filename.c_str());
     Update.runAsync(true);
-    isupdating = true;
+    is_updating = true;
 
     if (update_spiffs) {
       size_t spiffsSize = ((size_t)&_SPIFFS_end - (size_t)&_SPIFFS_start);
@@ -150,7 +150,7 @@ void handleFileUpload(AsyncWebServerRequest *request, const String& filename, si
     }
   }
   else {
-    isupdating = false;
+    is_updating = false;
   }
 
   if (final) {
@@ -161,7 +161,7 @@ void handleFileUpload(AsyncWebServerRequest *request, const String& filename, si
       debug("Update end failure: ");
       Update.printError(Serial);
     }
-    isupdating = false;
+    is_updating = false;
   }
 }
 
@@ -189,9 +189,10 @@ void handleFS(AsyncWebServerRequest *request) {
 }
 
 void handleRedirect(AsyncWebServerRequest *request) {
+  bool sta_ip = (request->host() == WiFi.localIP().toString());
   debug("HTTP-Server: request redirected from: %s \n", request->url().c_str());
   AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "");
-  response->addHeader("Location", String("http://") + (WiFi.getMode() == WIFI_AP ? WiFi.softAPIP().toString() : WiFi.localIP().toString()) + String("/setup"));
+  response->addHeader("Location", String("http://") + (sta_ip ? WiFi.localIP().toString() : WiFi.softAPIP().toString()) + String("/setup"));
   request->send(response);
 }
 
