@@ -7,10 +7,12 @@ void httpServer_SetupHandlers() {
 
   httpServer.on("/setup", HTTP_GET, handleSetup);
   httpServer.on("/style.css", HTTP_GET, handleStyle);
+  httpServer.on("/favicon.ico", HTTP_GET, handleFavicon);
   httpServer.on("/submit", HTTP_POST, handleSubmit);
   httpServer.on("/api_config", HTTP_GET, handleApiConfig);
   httpServer.on("/upload", HTTP_GET, handleUpload);
   httpServer.on("/update", HTTP_POST, handleUpdate, handleFileUpload);
+  httpServer.on("/reboot", HTTP_GET, handleReboot, handleFileUpload);
   httpServer.on("/fs", HTTP_GET, handleFS);
 
   httpServer.onNotFound(handleRedirect);
@@ -24,6 +26,11 @@ void handleSetup(AsyncWebServerRequest *request) {
 void handleStyle(AsyncWebServerRequest *request) {
   if (!(!config.current["locallogin"].length() || !config.current["localpassword"].length() || request->authenticate(config.current["locallogin"].c_str(), config.current["localpassword"].c_str()))) return request->requestAuthentication();
   request->send_P(200, "text/css", style_html);
+}
+
+void handleFavicon(AsyncWebServerRequest* request) {
+  if (!(!config.current["locallogin"].length() || !config.current["localpassword"].length() || request->authenticate(config.current["locallogin"].c_str(), config.current["localpassword"].c_str()))) return request->requestAuthentication();
+  request->send_P(200, "image/x-icon", favicon_ico, sizeof(favicon_ico));
 }
 
 void handleSubmit(AsyncWebServerRequest *request) {
@@ -41,7 +48,7 @@ void handleSubmit(AsyncWebServerRequest *request) {
   config.saveConfig();
 
   request->send(200, "text/html", "Configuration saved.");
-  got_config = true;
+  //got_config = true;
 }
 
 void handleApiConfig(AsyncWebServerRequest *request) {
@@ -95,6 +102,13 @@ void handleUpload(AsyncWebServerRequest *request) {
   request->send_P(200, "text/html", upload_html);
 }
 
+void handleReboot(AsyncWebServerRequest* request) {
+  if (!(!config.current["locallogin"].length() || !config.current["localpassword"].length() || request->authenticate(config.current["locallogin"].c_str(), config.current["localpassword"].c_str()))) return request->requestAuthentication();
+  debug(" - reboot command recieved \n");
+  need_reboot = true;
+  request->send_P(200, "text/html", reboot_html);
+}
+
 void handleUpdate(AsyncWebServerRequest *request) {
   if (!(!config.current["locallogin"].length() || !config.current["localpassword"].length() || request->authenticate(config.current["locallogin"].c_str(), config.current["localpassword"].c_str()))) return request->requestAuthentication();
   bool update_spiffs = false;
@@ -103,7 +117,7 @@ void handleUpdate(AsyncWebServerRequest *request) {
     update_spiffs = (request->getParam("spiffs", true)->value() == "1");
   }
 
-  got_update = !update_spiffs && !Update.hasError();
+  need_reboot = !update_spiffs && !Update.hasError();
   request->send_P(200, "text/html", Update.hasError() ? updatefailure_html : updatesuccess_html);
 }
 

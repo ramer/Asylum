@@ -116,7 +116,7 @@
     <None Include="http.ino">
       <FileType>CppCode</FileType>
     </None>
-    <None Include="mqtt.ino">
+    <None Include="tools.ino">
       <FileType>CppCode</FileType>
     </None>
   </ItemGroup>

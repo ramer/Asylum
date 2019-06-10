@@ -18,7 +18,7 @@
     <None Include="Asylum.ino" />
     <None Include="html.ino" />
     <None Include="http.ino" />
-    <None Include="mqtt.ino" />
+    <None Include="tools.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.Asylum.vsarduino.h">

@@ -15,6 +15,7 @@
 #define DEBUG
 //#define DEBUG_CORE
 
+#define STATUS_LED              13    //inverted
 
 #define WIFI_POWER              20.5
 #define PORT_DNS                53
@@ -22,14 +23,24 @@
 
 String id;
 String idsuffix;
+String mqtt_global_topic_status;
+String mqtt_global_topic_setup;
+String mqtt_global_topic_reboot;
 
 bool spiffs_ready = false;      // contains SPIFFS availability flag
 bool config_ready = false;      // contains config.loadConfig() result;
 bool dnsserver_ready = false;   // contains config.loadConfig() result;
 bool is_updating = false;       // contains firmware uploading flag
-bool got_update = false;        // contains firmware uploaded flag 
-bool got_config = false;        // contains configuration updated flag 
+bool need_reboot = false;       // contains reboot flag
+bool force_ap = false;          // contains forced AP mode flag
+ulong force_ap_time;            // contains forced AP mode time
 byte connect_attempts = 0;      // contains connection attempts, increases when client was disconnected
+
+#ifdef STATUS_LED
+#define STATUS_LED_INTERVAL     500
+ulong status_led_time;
+bool  status_led_state;
+#endif
 
 DNSServer       dnsServer;
 WiFiClient      wifiClient;
@@ -58,6 +69,10 @@ void setup() {
   uint8_t mac[6]; WiFi.macAddress(mac);
   for (int i = sizeof(mac) - 2; i < sizeof(mac); ++i) idsuffix += String(mac[i], HEX);
   id = "ESP-" + idsuffix;
+  mqtt_global_topic_status = id + "/status";
+  mqtt_global_topic_setup = id + "/setup";
+  mqtt_global_topic_reboot = id + "/reboot";
+
   debug("Chip started: %s, Flash size: %u \n", id.c_str(), ESP.getFlashChipRealSize());
   if (ESP.getFlashChipSize() != ESP.getFlashChipRealSize()) debug("WARNING. Compiler flash size is different: %u \n", ESP.getFlashChipSize());
   debug("Sketch size: %u bytes, free %u bytes \n\n", ESP.getSketchSize(), ESP.getFreeSketchSpace());
@@ -78,7 +93,7 @@ void setup() {
   if (spiffs_ready) {
     debug("success \n");
     config_ready = config.loadConfig();
-    if (config_ready) debug("Initial mode is %u \n", config.current["mode"].toInt());
+    if (config_ready) debug("Initial config mode is %u \n", config.current["mode"].toInt());
   }
   else {
     debug("error \n");
@@ -94,23 +109,26 @@ void setup() {
   httpServer.begin();
   debug("started \n");
 
-  if ((WiFi.getMode() & WIFI_AP) != 0) {
+  byte mode = WiFi.getMode();
+  if ((mode & WIFI_AP) != 0) {
     StartAP();
   }
-  if (((WiFi.getMode() & WIFI_STA) != 0)) {
+  if (((mode & WIFI_STA) != 0)) {
     StartSTA();
   }
-    
-  debug("Current WiFi mode is %u \n", WiFi.getMode());
+  
+  mode = WiFi.getMode(); // mode could be changed
+  debug("Current WiFi mode is %s \n", mode == 1 ? "STA" : mode == 2 ? "AP" : mode == 3 ? "AP_STA" : "OFF");
 
   debug("Setup done. Free heap size: %u \n\n", ESP.getFreeHeap());
 }
 
 
 void loop() {
-  byte mode = config.current["mode"].toInt();
-  bool APEnabled = ((WiFi.getMode() & WIFI_AP) != 0);
-  bool STAEnabled = ((WiFi.getMode() & WIFI_STA) != 0);
+  byte configmode = config.current["mode"].toInt();
+  byte mode = WiFi.getMode();
+  bool APEnabled = ((mode & WIFI_AP) != 0);
+  bool STAEnabled = ((mode & WIFI_STA) != 0);
 
   // DO NOT DO ANYTHING WHILE UPDATING
   if (is_updating) return;
@@ -119,30 +137,37 @@ void loop() {
   if (APEnabled && dnsserver_ready) dnsServer.processNextRequest();
 
   // LOOP IN CLIENT MQTT MODE
-  if (STAEnabled && WiFi.isConnected() && config_ready && mode == 2 && !mqttClient.loop() && !mqttClient.connected()) mqttClient_connect();
+  if (STAEnabled && WiFi.isConnected() && config_ready && configmode == 2 && !mqttClient.loop() && !mqttClient.connected()) mqttClient_connect();
 
   if (config_ready) { // Config is valid
-    if (mode == 0) { // Local mode
-      if (!APEnabled) StartAP();
+    if (configmode == 0) { // Local mode
       if (STAEnabled) StopSTA();
+      if (!APEnabled) StartAP();
     }
-    else if (mode == 1 || mode == 2) { // Client or MQTT client mode
-      if (!STAEnabled) StartSTA();
-
+    else if (configmode == 1 || configmode == 2) { // Client or MQTT client mode
       if (WiFi.isConnected()) {
-        if (APEnabled && WiFi.softAPgetStationNum() == 0) StopAP();
+        if (APEnabled && WiFi.softAPgetStationNum() == 0 && (!force_ap || (millis() - force_ap_time > 60000))) {
+          StopAP();
+          if (force_ap) force_ap = false;
+        }
       }
       else {
         if (connect_attempts >= 10) { // start AP when client if disconnected for 10 secs
           if (!APEnabled) StartAP();
         }
       }
+
+      if (!STAEnabled) StartSTA();
     }
   }
   else { // Config is not valid
-    if (!APEnabled) StartAP();
     if (STAEnabled) StopSTA();
+    if (!APEnabled) StartAP();
   }
+
+  blynk((configmode == 1 || configmode == 2) && APEnabled);
+
+  check_reboot();
 }
 
 void StartAP() {
@@ -204,6 +229,8 @@ void WiFi_onSoftAPModeStationConnected(const WiFiEventSoftAPModeStationConnected
   dnsServer.start(PORT_DNS, "*", WiFi.softAPIP());
   dnsserver_ready = true;
   debug("started \n");
+
+  force_ap = false;  // force AP mode was enabled by MQTT or button for 1 minute
 }
 
 void WiFi_onSoftAPModeStationDisconnected(const WiFiEventSoftAPModeStationDisconnected& evt) {
@@ -240,6 +267,11 @@ void mqttClient_connect() {
   if (mqttClient.connect(id.c_str(), config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str())) {
     debug("connected, state = %i \n", mqttClient.state());
 
+    mqttClient.subscribe(mqtt_global_topic_setup.c_str());
+    mqttClient.subscribe(mqtt_global_topic_reboot.c_str());
+
+    mqtt_publishStatus();
+
     //for (auto &d : devices) {
     //  d->subscribe();
     //  d->publishStatus();
@@ -267,4 +299,46 @@ void WiFi_onStationModeDisconnected(const WiFiEventStationModeDisconnected& evt)
   debug("Disconnected from access point: %s, reason: %u, connect attempt: %u \n", evt.ssid.c_str(), evt.reason, connect_attempts);
   connect_attempts += 1;
   if (config_ready && config.current["mode"].toInt() == 2) mqttClient.disconnect();
+}
+
+void mqtt_callback(char* tp, byte* pl, unsigned int length) {
+  pl[length] = '\0';
+  String payload = String((char*)pl);
+  String topic = String(tp);
+
+  debug(" - message recieved [%s]: %s \n", topic.c_str(), payload.c_str());
+  
+    if (topic == mqtt_global_topic_setup) {
+      debug(" - setup mode command recieved \n");
+      force_ap = true;
+      force_ap_time = millis();
+      StartAP();
+    }
+
+    if (topic == mqtt_global_topic_reboot) {
+      debug(" - reboot command recieved \n");
+      need_reboot = true;
+    }
+
+  //for (auto &d : devices) {
+  //  d->handlePayload(topic, payload);
+  //}
+}
+
+void mqtt_publishStatus() {
+  if (!mqttClient.connected()) return;
+    
+  char payload[MQTT_MAX_PACKET_SIZE];
+
+  uint8_t mac_int[6];
+  WiFi.macAddress(mac_int);
+  String mac_str = "";
+  for (int i = 0; i < sizeof(mac_int); ++i) {
+    mac_str += String(mac_int[i], HEX);
+  }
+
+  snprintf(payload, sizeof(payload), "{\"MAC\":\"%s\",\"IP\":\"%s\"}", mac_str.c_str(), WiFi.localIP().toString().c_str());
+  mqttClient.publish(mqtt_global_topic_status.c_str(), payload, true);
+
+  debug(" - message sent [%s] %s \n", mqtt_global_topic_status.c_str(), payload);
 }
