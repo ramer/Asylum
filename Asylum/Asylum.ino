@@ -1,4 +1,6 @@
 
+#include "Button.h"
+#include "Device.h"
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
@@ -8,7 +10,20 @@
 
 #include "Debug.h"
 #include "Config.h"
+#include "Device.h"
 
+#include "src/Socket.h"
+
+// GLOBAL FIRMWARE CONFIGURATION
+
+#define DEVICE_TYPE_SOCKET
+//#define DEVICE_TYPE_TOUCHT1
+//
+//#define DEVICE_TYPE_MOTOR
+//#define DEVICE_TYPE_STRIP
+//#define DEVICE_TYPE_ENCODER
+//
+//#define DEVICE_TYPE_ANALOGSENSOR
 
 // DEFINES
 
@@ -22,7 +37,7 @@
 #define PORT_HTTP               80
 
 String id;
-String idsuffix;
+String id_macsuffix;
 String mqtt_global_topic_status;
 String mqtt_global_topic_setup;
 String mqtt_global_topic_reboot;
@@ -46,9 +61,12 @@ DNSServer       dnsServer;
 WiFiClient      wifiClient;
 PubSubClient    mqttClient(wifiClient);
 AsyncWebServer  httpServer(PORT_HTTP);
+
 IPAddress       wifi_AP_IP(192, 168, 4, 1);
 IPAddress       wifi_AP_MASK(255, 255, 255, 0);
 Config          config;
+
+std::vector<Device*> devices;
 
 WiFiEventHandler softAPModeStationConnectedHandler;
 WiFiEventHandler softAPModeStationDisconnectedHandler;
@@ -67,8 +85,8 @@ void setup() {
   // Initialize chip
   debug("\n\n\n");
   uint8_t mac[6]; WiFi.macAddress(mac);
-  for (int i = sizeof(mac) - 2; i < sizeof(mac); ++i) idsuffix += String(mac[i], HEX);
-  id = "ESP-" + idsuffix;
+  for (int i = sizeof(mac) - 2; i < sizeof(mac); ++i) id_macsuffix += String(mac[i], HEX);
+  id = "ESP-" + id_macsuffix;
   mqtt_global_topic_status = id + "/status";
   mqtt_global_topic_setup = id + "/setup";
   mqtt_global_topic_reboot = id + "/reboot";
@@ -100,8 +118,42 @@ void setup() {
     debug("WARNING. Configuration files cannot be load/save. \n");
   }
 
+  
+  // Initialize devices
 
-  //TODO Initialize devices
+#if (defined DEVICE_TYPE_SOCKET)
+  devices.push_back(new Socket("Socket1", 0, 12));       // event, action
+  devices.push_back(new Socket("Socket2", 2, 14));       // event, action
+#endif
+#if (defined DEVICE_TYPE_TOUCHT1                        && defined ARDUINO_ESP8266_ESP01)
+  devices.push_back(new TouchT1("TouchT1", 0, 12, 9, 5, 10, 4));   // event, action, event2, action2, event3, action3
+#endif
+
+// IMPORTANT: use Generic ESP8266 Module
+#if (defined DEVICE_TYPE_MOTOR                          && defined ARDUINO_ESP8266_GENERIC)    
+  devices.push_back(new Motor("Motor", 0, 12, 14));              // event, direction, action
+#endif
+#if (defined DEVICE_TYPE_STRIP                          && defined ARDUINO_ESP8266_GENERIC)
+#define PIN_LED 12                                    // redefine - we need GPIO 13 for LEDs
+  devices.push_back(new Strip("Strip", 0, 13));                  // event, direction, action
+#endif
+#if (defined DEVICE_TYPE_ENCODER                        && defined ARDUINO_ESP8266_GENERIC)
+  devices.push_back(new Encoder("Encoder", 0, 14, 12, 13));        // event, action, A, B
+#endif
+
+// IMPORTANT: use Amperka WiFi Slot
+#if (defined DEVICE_TYPE_ANALOGSENSOR                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
+#define PIN_MODE	A5	                                // inverted
+#define PIN_LED   A2                                  // inverted
+  devices.push_back(new AnalogSensor("AnalogSensor", A5, A2, A6));      // event, action, sensor
+#endif 
+
+  debug("Initializing devices \n");
+
+  for (auto& d : devices) {
+    d->initialize(&mqttClient, &config);
+    debug("Initialized: %s \n", d->uid.c_str());
+  }
 
   //Initialize Web-interface
   debug("Starting HTTP-server ... ");
@@ -165,6 +217,13 @@ void loop() {
     if (!APEnabled) StartAP();
   }
 
+
+  // DO ANYWAY
+
+  for (auto& d : devices) {
+    d->update();
+  }
+
   blynk((configmode == 1 || configmode == 2) && APEnabled);
 
   check_reboot();
@@ -179,6 +238,12 @@ void StartAP() {
   WiFi.softAPConfig(wifi_AP_IP, wifi_AP_IP, wifi_AP_MASK);
   WiFi.softAP(id.c_str());
   debug("started (%s) \n", WiFi.softAPIP().toString().c_str());
+}
+
+void StartAPForce() {
+  force_ap = true;
+  force_ap_time = millis();
+  StartAP();
 }
 
 void StopAP() {
@@ -272,11 +337,9 @@ void mqttClient_connect() {
 
     mqtt_publishStatus();
 
-    //for (auto &d : devices) {
-    //  d->subscribe();
-    //  d->publishStatus();
-    //}
-
+    for (auto &d : devices) {
+      d->subscribe();
+    }
   }
   else
   {
@@ -308,21 +371,19 @@ void mqtt_callback(char* tp, byte* pl, unsigned int length) {
 
   debug(" - message recieved [%s]: %s \n", topic.c_str(), payload.c_str());
   
-    if (topic == mqtt_global_topic_setup) {
-      debug(" - setup mode command recieved \n");
-      force_ap = true;
-      force_ap_time = millis();
-      StartAP();
-    }
+  if (topic == mqtt_global_topic_setup) {
+    debug(" - setup mode command recieved \n");
+    StartAPForce();
+  }
 
-    if (topic == mqtt_global_topic_reboot) {
-      debug(" - reboot command recieved \n");
-      need_reboot = true;
-    }
+  if (topic == mqtt_global_topic_reboot) {
+    debug(" - reboot command recieved \n");
+    need_reboot = true;
+  }
 
-  //for (auto &d : devices) {
-  //  d->handlePayload(topic, payload);
-  //}
+  for (auto &d : devices) {
+    d->handlePayload(topic, payload);
+  }
 }
 
 void mqtt_publishStatus() {

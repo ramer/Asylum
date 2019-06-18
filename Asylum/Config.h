@@ -17,7 +17,6 @@ extern "C" {
 }
 
 #define CONFIG_FILENAME_CONFIG "/config.json"
-#define CONFIG_FILENAME_STATE  "/state.json"
 #define CONFIG_VALIDATOR "x"
 
 class Config {
@@ -30,8 +29,8 @@ public:
   bool loadConfig();
   void saveConfig();
 
-  //std::map<String, String> loadState(String filename);
-  //void saveState(String filename, JsonObject &root);
+  std::map<String, String> loadState(String filename);
+  void saveState(String filename, std::map<String, String> states);
 
 };
 

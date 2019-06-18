@@ -102,3 +102,43 @@ void Config::saveConfig() {
 
   file.close();
 }
+
+std::map<String, String> Config::loadState(String filename)
+{
+  std::map<String, String> states;
+  File file = SPIFFS.open(filename.c_str(), "r");
+  if (!file) return states;
+  DynamicJsonBuffer jsonBuffer;
+  JsonObject& root = jsonBuffer.parseObject(file);
+
+  debug("-------------\t\tBEGIN OF FILE\t\t------------\n");
+  root.prettyPrintTo(Serial);
+  debug("\n-------------\t\tEND OF FILE\t\t------------\n");
+
+  if (!root.success()) { file.close(); return states; }
+  for (auto& jsonPair : root) {
+    states.insert(std::pair<String, String>(String(jsonPair.key), String(jsonPair.value.asString())));
+  }
+  file.close();
+  return states;
+}
+
+void Config::saveState(String filename, std::map<String, String> states)
+{
+  File file = SPIFFS.open(filename.c_str(), "w");
+  if (!file) return;
+
+  DynamicJsonBuffer jsonBuffer;
+  JsonObject& root = jsonBuffer.createObject();
+
+  for (auto& statesPair : states) {
+    root[statesPair.first] = statesPair.second;
+  }
+
+  debug("-------------\t\tBEGIN OF FILE\t\t------------\n");
+  root.prettyPrintTo(Serial);
+  debug("\n-------------\t\tEND OF FILE\t\t------------\n");
+
+  root.printTo(file);
+  file.close();
+}
