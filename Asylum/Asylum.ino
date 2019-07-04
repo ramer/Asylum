@@ -82,11 +82,40 @@ void setup() {
 #endif
 #endif
 
+#if (defined DEVICE_TYPE_SOCKET)
+  devices.push_back(new Socket("Socket1", 0, 12));       // event, action
+  //devices.push_back(new Socket("Socket2", 2, 14));       // event, action
+#endif
+#if (defined DEVICE_TYPE_TOUCHT1                        && defined ARDUINO_ESP8266_ESP01)
+  devices.push_back(new TouchT1("TouchT1", 0, 12, 9, 5, 10, 4));   // event, action, event2, action2, event3, action3
+#endif
+
+// IMPORTANT: use Generic ESP8266 Module
+#if (defined DEVICE_TYPE_MOTOR                          && defined ARDUINO_ESP8266_GENERIC)    
+  devices.push_back(new Motor("Motor", 0, 12, 14));              // event, direction, action
+#endif
+#if (defined DEVICE_TYPE_STRIP                          && defined ARDUINO_ESP8266_GENERIC)
+#define PIN_LED 12                                    // redefine - we need GPIO 13 for LEDs
+  devices.push_back(new Strip("Strip", 0, 13));                  // event, direction, action
+#endif
+#if (defined DEVICE_TYPE_ENCODER                        && defined ARDUINO_ESP8266_GENERIC)
+  devices.push_back(new Encoder("Encoder", 0, 14, 12, 13));        // event, action, A, B
+#endif
+
+// IMPORTANT: use Amperka WiFi Slot
+#if (defined DEVICE_TYPE_ANALOGSENSOR                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
+#define PIN_MODE	A5	                                // inverted
+#define PIN_LED   A2                                  // inverted
+  devices.push_back(new AnalogSensor("AnalogSensor", A5, A2, A6));      // event, action, sensor
+#endif 
+
+
   // Initialize chip
   debug("\n\n\n");
   uint8_t mac[6]; WiFi.macAddress(mac);
   for (int i = sizeof(mac) - 2; i < sizeof(mac); ++i) id_macsuffix += String(mac[i], HEX);
-  id = "ESP-" + id_macsuffix;
+  
+  id = devices.size() == 1 ? devices[0]->uid_prefix + "-" + id_macsuffix : "ESP-" + id_macsuffix;
   mqtt_global_topic_status = id + "/status";
   mqtt_global_topic_setup = id + "/setup";
   mqtt_global_topic_reboot = id + "/reboot";
@@ -117,39 +146,9 @@ void setup() {
     debug("error \n");
     debug("WARNING. Configuration files cannot be load/save. \n");
   }
-
-  
+    
   // Initialize devices
-
-#if (defined DEVICE_TYPE_SOCKET)
-  devices.push_back(new Socket("Socket1", 0, 12));       // event, action
-  devices.push_back(new Socket("Socket2", 2, 14));       // event, action
-#endif
-#if (defined DEVICE_TYPE_TOUCHT1                        && defined ARDUINO_ESP8266_ESP01)
-  devices.push_back(new TouchT1("TouchT1", 0, 12, 9, 5, 10, 4));   // event, action, event2, action2, event3, action3
-#endif
-
-// IMPORTANT: use Generic ESP8266 Module
-#if (defined DEVICE_TYPE_MOTOR                          && defined ARDUINO_ESP8266_GENERIC)    
-  devices.push_back(new Motor("Motor", 0, 12, 14));              // event, direction, action
-#endif
-#if (defined DEVICE_TYPE_STRIP                          && defined ARDUINO_ESP8266_GENERIC)
-#define PIN_LED 12                                    // redefine - we need GPIO 13 for LEDs
-  devices.push_back(new Strip("Strip", 0, 13));                  // event, direction, action
-#endif
-#if (defined DEVICE_TYPE_ENCODER                        && defined ARDUINO_ESP8266_GENERIC)
-  devices.push_back(new Encoder("Encoder", 0, 14, 12, 13));        // event, action, A, B
-#endif
-
-// IMPORTANT: use Amperka WiFi Slot
-#if (defined DEVICE_TYPE_ANALOGSENSOR                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
-#define PIN_MODE	A5	                                // inverted
-#define PIN_LED   A2                                  // inverted
-  devices.push_back(new AnalogSensor("AnalogSensor", A5, A2, A6));      // event, action, sensor
-#endif 
-
   debug("Initializing devices \n");
-
   for (auto& d : devices) {
     d->initialize(&mqttClient, &config);
     debug("Initialized: %s \n", d->uid.c_str());
