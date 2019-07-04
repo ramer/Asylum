@@ -45,9 +45,9 @@ void Device::update() {
 }
 
 void Device::updateState(ulong state_new) {
-  state_old = (state_new > 0 && state_old > 0) ? 0 : state_old;
+  state_last = state_new != state_off ? state_new : state_last;
   state = state_new;
-  digitalWrite(pin_action, (state == 0 ? LOW : HIGH));
+  digitalWrite(pin_action, (state == state_off ? LOW : HIGH));
   state_published = false;
 
   debug(" - state changed to %u \n", state_new);
@@ -55,12 +55,11 @@ void Device::updateState(ulong state_new) {
 }
 
 void Device::invertState() {
-  if (state == 0) {
-    if (state_old == 0) { state_old = 1; }
-    updateState(state_old);
+  if (state == state_off) {
+    updateState(state_last != state_off ? state_last : state_on);
   }
   else {
-    updateState(0);
+    updateState(state_off);
   }
 }
 
@@ -117,22 +116,19 @@ void Device::loadState() {
   else if (onboot == 2) {
     // saved state
     std::map<String, String> states = _config->loadState(uid_filename);
-    debug(" - onboot: last state: %u \n", states["state"].toInt());
-    updateState(states["state"].toInt());
+    state = states["state"].toInt();
+    state_last = states["state_last"].toInt();
+    updateState(state);
+    debug(" - onboot: last state: %u \n", state);
   }
   else if (onboot == 3) {
     // inverted saved state
     std::map<String, String> states = _config->loadState(uid_filename);
-    if (states["on"].toInt() == 0) {
-      debug(" - onboot: inverted state: %u \n", states["state"].toInt());
-      updateState(states["state"].toInt());
-      saveState();
-    }
-    else {
-      debug(" - onboot: inverted state: 0 \n");
-      updateState(0);
-      saveState();
-    }
+    state = states["state"].toInt();
+    state_last = states["state_last"].toInt();
+    invertState();
+    debug(" - onboot: inverted state: %u \n", state);
+    saveState();
   }
 }
 
@@ -141,19 +137,9 @@ void Device::saveState() {
   byte onboot = _config->current["onboot"].toInt();
   if (onboot == 0 || onboot == 1) return;
 
-  bool on = state;
-
-  std::map<String, String> states_old = _config->loadState(uid_filename);
   std::map<String, String> states;
-
-  states.insert(std::pair<String, String>("on", String((int)on)));
-
-  if (on) {
-    states.insert(std::pair<String, String>("state", String(state)));
-  }
-  else {
-    states.insert(std::pair<String, String>("state", states_old["state"]));
-  }
+  states.insert(std::pair<String, String>("state", String(state)));
+  states.insert(std::pair<String, String>("state_last", String(state_last)));
 
   _config->saveState(uid_filename, states);
 }

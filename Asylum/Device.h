@@ -29,7 +29,9 @@ public:
   //void onUpdateState(std::function<void(ulong)> onUpdateStateCallback);
 
   ulong state = 0;
-  ulong state_old = 0;
+  ulong state_last = 0;
+  const ulong state_on = 1;
+  const ulong state_off = 0;
 
   String uid;
   String uid_prefix;
