@@ -16,9 +16,8 @@
 
 // GLOBAL FIRMWARE CONFIGURATION
 
-#define DEVICE_TYPE_SOCKET
-//#define DEVICE_TYPE_TOUCHT1
-//
+//#define DEVICE_TYPE_SOCKET
+#define DEVICE_TYPE_TOUCHT1
 //#define DEVICE_TYPE_MOTOR
 //#define DEVICE_TYPE_STRIP
 //#define DEVICE_TYPE_ENCODER
@@ -86,8 +85,10 @@ void setup() {
   devices.push_back(new Socket("Socket1", 0, 12));       // event, action
   //devices.push_back(new Socket("Socket2", 2, 14));       // event, action
 #endif
-#if (defined DEVICE_TYPE_TOUCHT1                        && defined ARDUINO_ESP8266_ESP01)
-  devices.push_back(new TouchT1("TouchT1", 0, 12, 9, 5, 10, 4));   // event, action, event2, action2, event3, action3
+#if (defined DEVICE_TYPE_TOUCHT1)
+  devices.push_back(new Socket("TouchT1-1", 0, 12));   // event, action
+  devices.push_back(new Socket("TouchT1-2", 9, 5));    // event, action
+  //devices.push_back(new Socket("TouchT1-3", 10, 4)); // event, action
 #endif
 
 // IMPORTANT: use Generic ESP8266 Module
