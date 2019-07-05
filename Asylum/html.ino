@@ -16,17 +16,10 @@ const char setup_html[] PROGMEM = R"~(<!DOCTYPE html>
         <div id="loading-placeholer">Загрузка...</div>
         <form id="mainForm" style="display: none;" action="/submit" method="POST" onsubmit="submitForm(this);">
             <div class="field-group"><a class="upload" href="/upload">Обновление ПО</a></div>
-
             <h3>Управление</h3>
-
-            <!-- вот этот кусок будет вставлен динамически в зависимости от типа девайса -->
-
             <div class="field-group" id="controlpanel">
 
             </div>
-
-            <!-- вставлено будет до сюда -->
-
             <div class="field-group">
                 <label for="description" class="label">Описание:</label>
                 <div class="field">
