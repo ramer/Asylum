@@ -43,7 +43,7 @@ public:
   String html_control = R"~(
     <div class="field-group">
         <input id="uid" type="checkbox" onclick="onCheckboxClick(event)" class="toggle">
-            <label for="uid">не работает</label>
+            <label for="uid">OFF</label>
         </input>
     </div>)~";
 
