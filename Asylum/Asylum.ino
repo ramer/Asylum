@@ -298,6 +298,7 @@ void WiFi_onSoftAPModeStationConnected(const WiFiEventSoftAPModeStationConnected
   force_ap = false;  // force AP mode was enabled by MQTT or button for 1 minute
 }
 
+
 void WiFi_onSoftAPModeStationDisconnected(const WiFiEventSoftAPModeStationDisconnected& evt) {
   String mac; for (byte i = 0; i < sizeof(evt.mac); ++i) mac += String(evt.mac[i], HEX);
   debug("Access point client disconnected: %s \n", mac.c_str());
