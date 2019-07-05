@@ -16,16 +16,12 @@
         <form id="mainForm" style="display: none;" action="/submit" method="POST" onsubmit="submitForm(this);">
             <div class="field-group"><a class="upload" href="/upload">Обновление ПО</a></div>
 
+            <h3>Управление</h3>
+
             <!-- вот этот кусок будет вставлен динамически в зависимости от типа девайса -->
 
-            <h3>Управление</h3>
             <div class="field-group">
-                <!-- вот тут надо отправить post на /api_command
-                в аргументы надо положить state=1 и 0 соотвественно, 
-                по получению 200 надо взять тело как integer и присвоить чекбоксу- -->
-                <input id="tHiScHeCkBoX" type="checkbox" onclick="onCheckboxClick(event)" class="toggle">
-                    <label for="tHiScHeCkBoX">не работает</label>
-                </input>
+
             </div>
 
             <!-- вставлено будет до сюда -->

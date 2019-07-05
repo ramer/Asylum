@@ -40,6 +40,13 @@ public:
   String mqtt_topic_pub;
   String mqtt_topic_sub;
 
+  String html_control = R"~(
+    <div class="field-group">
+        <input id="uid" type="checkbox" onclick="onCheckboxClick(event)" class="toggle">
+            <label for="uid">не работает</label>
+        </input>
+    </div>)~";
+
 protected:
   virtual void generateUid();
   virtual void loadState();

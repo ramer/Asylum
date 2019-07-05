@@ -29,6 +29,7 @@ void Device::generateUid() {
   uid_filename = "/" + uid + ".json";
   mqtt_topic_sub = uid + "/pub";
   mqtt_topic_pub = uid + "/sub";
+  html_control.replace("uid", uid);
 }
 
 void Device::update() {
