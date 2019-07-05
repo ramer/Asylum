@@ -10,6 +10,8 @@ void httpServer_SetupHandlers() {
   httpServer.on("/favicon.ico", HTTP_GET, handleFavicon);
   httpServer.on("/submit", HTTP_POST, handleSubmit);
   httpServer.on("/api_config", HTTP_GET, handleApiConfig);
+  httpServer.on("/api_controls", HTTP_GET, handleApiControls);
+  httpServer.on("/api_command", HTTP_POST, handleApiCommand);
   httpServer.on("/upload", HTTP_GET, handleUpload);
   httpServer.on("/update", HTTP_POST, handleUpdate, handleFileUpload);
   httpServer.on("/reboot", HTTP_GET, handleReboot, handleFileUpload);
@@ -95,6 +97,39 @@ print:
   request->send(response);
 
   debug("HTTP-Server: config requested \n");
+}
+
+void handleApiControls(AsyncWebServerRequest* request) {
+  if (!(!config.current["locallogin"].length() || !config.current["localpassword"].length() || request->authenticate(config.current["locallogin"].c_str(), config.current["localpassword"].c_str()))) return request->requestAuthentication();
+
+  String controls;
+
+  for (auto& d : devices) {
+    controls = controls + d->html_control;
+  }
+  request->send(200, "text/html", controls);
+
+  debug("HTTP-Server: controls requested \n");
+}
+
+void handleApiCommand(AsyncWebServerRequest* request) {
+  if (!(!config.current["locallogin"].length() || !config.current["localpassword"].length() || request->authenticate(config.current["locallogin"].c_str(), config.current["localpassword"].c_str()))) return request->requestAuthentication();
+
+  if (request->hasParam("state", true) && request->hasParam("id", true)) {
+    ulong newstate = request->getParam("state", true)->value().toInt();
+
+    for (auto& d : devices) {
+      if (d->uid == request->getParam("id", true)->value()) {
+        d->updateState(newstate);
+        request->send(200, "text/html", String(d->state));
+      }
+    }
+  }
+  else {
+    debug("HTTP-Server: received to less parameters \n");
+  }
+
+  request->send(200, "text/html", "0");
 }
 
 void handleUpload(AsyncWebServerRequest *request) {

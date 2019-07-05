@@ -20,7 +20,7 @@
 
             <!-- вот этот кусок будет вставлен динамически в зависимости от типа девайса -->
 
-            <div class="field-group">
+            <div class="field-group" id="controlpanel">
 
             </div>
 
@@ -315,9 +315,10 @@
 
             var formData = [];
             formData.push(encodeURIComponent('state') + '=' + encodeURIComponent(+el.checked));
+            formData.push(encodeURIComponent('id') + '=' + encodeURIComponent(el.id));
 
             var xhr = new XMLHttpRequest();
-            xhr.open('post', '/posts/1', true);
+            xhr.open('post', '/api_command', true);
             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
             xhr.send(formData);
             xhr.onreadystatechange = function () {
@@ -376,7 +377,24 @@
             document.getElementById("mainForm").style.display = "block";
         }
 
+        // load controls
+        function fillControls() {
+            // get control panel
+            var xhr = new XMLHttpRequest();
+            xhr.open('get', '/api_controls', true);
+            xhr.send();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState != XMLHttpRequest.DONE) return;
+                if (xhr.status != 200) {
+                    alert(xhr.status + ': ' + xhr.statusText);
+                } else {
+                    document.getElementById('controlpanel').innerHTML = xhr.responseText;
+                }
+            }
+        }
+
         try {
+            // get form
             getJSON('/api_config', function (err, data) {
                 if (err != null) {
                     alert('getJSON returned: ' + err);
@@ -385,6 +403,10 @@
                     fillForm(data);
                 }
             });
+
+            // get controls
+            fillControls();
+
         } catch (err) {
             alert('Something went wrong: ' + err);
             fillForm([]);

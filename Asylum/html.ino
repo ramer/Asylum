@@ -8,7 +8,6 @@ const char setup_html[] PROGMEM = R"~(<!DOCTYPE html>
   <title>Настройка устройства</title>
   <link rel="stylesheet" type="text/css" href="style.css">
 </head>
-
 <body>
     <div class="wrapper_full">
         <header>
@@ -17,6 +16,17 @@ const char setup_html[] PROGMEM = R"~(<!DOCTYPE html>
         <div id="loading-placeholer">Загрузка...</div>
         <form id="mainForm" style="display: none;" action="/submit" method="POST" onsubmit="submitForm(this);">
             <div class="field-group"><a class="upload" href="/upload">Обновление ПО</a></div>
+
+            <h3>Управление</h3>
+
+            <!-- вот этот кусок будет вставлен динамически в зависимости от типа девайса -->
+
+            <div class="field-group" id="controlpanel">
+
+            </div>
+
+            <!-- вставлено будет до сюда -->
+
             <div class="field-group">
                 <label for="description" class="label">Описание:</label>
                 <div class="field">
@@ -297,6 +307,41 @@ const char setup_html[] PROGMEM = R"~(<!DOCTYPE html>
             }
         }
 
+        /*
+         * Checkbox click event
+         */
+        function onCheckboxClick(event) {
+            var el = event.target;
+            el.disabled = true;
+
+            var formData = [];
+            formData.push(encodeURIComponent('state') + '=' + encodeURIComponent(+el.checked));
+            formData.push(encodeURIComponent('id') + '=' + encodeURIComponent(el.id));
+            formData = formData.join("&");
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('post', '/api_command', true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.send(formData);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState != XMLHttpRequest.DONE) return;
+
+                // alert response
+                if (xhr.status != 200) {
+                    el.disabled = false;
+                    alert(xhr.status + ': ' + xhr.statusText);
+                } else {
+                    var state = Boolean(parseInt(xhr.responseText));
+                    el.disabled = false;
+                    el.checked = state;
+                    if (state) {
+                        el.labels[0].innerHTML = 'ON';
+                    } else {
+                        el.labels[0].innerHTML = 'OFF';
+                    }
+                }
+            }
+        }
 
         /*
          * Run this on load
@@ -334,7 +379,24 @@ const char setup_html[] PROGMEM = R"~(<!DOCTYPE html>
             document.getElementById("mainForm").style.display = "block";
         }
 
+        // load controls
+        function fillControls() {
+            // get control panel
+            var xhr = new XMLHttpRequest();
+            xhr.open('get', '/api_controls', true);
+            xhr.send();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState != XMLHttpRequest.DONE) return;
+                if (xhr.status != 200) {
+                    alert(xhr.status + ': ' + xhr.statusText);
+                } else {
+                    document.getElementById('controlpanel').innerHTML = xhr.responseText;
+                }
+            }
+        }
+
         try {
+            // get form
             getJSON('/api_config', function (err, data) {
                 if (err != null) {
                     alert('getJSON returned: ' + err);
@@ -343,6 +405,10 @@ const char setup_html[] PROGMEM = R"~(<!DOCTYPE html>
                     fillForm(data);
                 }
             });
+
+            // get controls
+            fillControls();
+
         } catch (err) {
             alert('Something went wrong: ' + err);
             fillForm([]);
