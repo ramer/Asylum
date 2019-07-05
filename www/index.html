@@ -23,14 +23,9 @@
                 <!-- вот тут надо отправить post на /api_command
                 в аргументы надо положить state=1 и 0 соотвественно, 
                 по получению 200 надо взять тело как integer и присвоить чекбоксу- -->
-                <input type="checkbox" onchange="(function() {
-                    if (this.is(':checked')) {
-                        this.innerHTML = 'ON';
-                    }
-                    else {
-                        this.innerHTML = 'OFF';
-                    }
-                  });" class="toggle">не работает</button>
+                <input id="tHiScHeCkBoX" type="checkbox" onclick="onCheckboxClick(event)" class="toggle">
+                    <label for="tHiScHeCkBoX">не работает</label>
+                </input>
             </div>
 
             <!-- вставлено будет до сюда -->
@@ -315,6 +310,39 @@
             }
         }
 
+        /*
+         * Checkbox click event
+         */
+        function onCheckboxClick(event) {
+            var el = event.target;
+            el.disabled = true;
+
+            var formData = [];
+            formData.push(encodeURIComponent('state') + '=' + encodeURIComponent(+el.checked));
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('post', '/posts/1', true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.send(formData);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState != XMLHttpRequest.DONE) return;
+
+                // alert response
+                if (xhr.status != 200) {
+                    el.disabled = false;
+                    alert(xhr.status + ': ' + xhr.statusText);
+                } else {
+                    var state = Boolean(parseInt(xhr.responseText));
+                    el.disabled = false;
+                    el.checked = state;
+                    if (state) {
+                        el.labels[0].innerHTML = 'ON';
+                    } else {
+                        el.labels[0].innerHTML = 'OFF';
+                    }
+                }
+            }
+        }
 
         /*
          * Run this on load
