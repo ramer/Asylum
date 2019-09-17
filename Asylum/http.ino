@@ -48,6 +48,7 @@ void handleSubmit(AsyncWebServerRequest *request) {
   }
 
   config.saveConfig();
+  config_ready = true;
 
   request->send(200, "text/html", "Configuration saved.");
   //got_config = true;

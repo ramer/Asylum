@@ -8,6 +8,10 @@ Device::Device(String prefix, byte event, byte action) {
   pin_action = action;
 }
 
+Device::Device(String prefix) {
+  uid_prefix = prefix;
+}
+
 Device::~Device() {}
 
 void Device::initialize(PubSubClient* ptr_mqttClient, Config* ptr_config) {
@@ -37,18 +41,22 @@ void Device::update() {
   if (btn.update() == DOWN) {
     debug(" - button down \n");
     invertState();
-    saveState();
   }
 
+  // check state saved
+  if (!state_saved && millis() - state_savedtime > INTERVAL_STATE_SAVE) { saveState(); }
+
   // check state published
-  if (!_mqttClient) return;
-  if (_mqttClient->connected() && !state_published && millis() - state_publishedtime > INTERVAL_STATE_PUBLISH) { publishState(mqtt_topic_pub, state, &state_published); }
+  if (_mqttClient && _mqttClient->connected() && !state_published && millis() - state_publishedtime > INTERVAL_STATE_PUBLISH) { publishState(mqtt_topic_pub, state); }
 }
 
 void Device::updateState(ulong state_new) {
   state_last = state_new != state_off ? state_new : state_last;
   state = state_new;
+
   digitalWrite(pin_action, (state == state_off ? LOW : HIGH));
+
+  state_saved = false;
   state_published = false;
 
   debug(" - state changed to %u \n", state_new);
@@ -69,15 +77,15 @@ void Device::handlePayload(String topic, String payload) {
     if (payload == "-1") {
       debug(" - value invert command recieved \n");
 
-      invertState(); //saveState();
-      publishState(mqtt_topic_pub, state, &state_published); // force
+      invertState(); 
+      publishState(mqtt_topic_pub, state); // force
     }
     else {
       ulong newvalue = payload.toInt();
       debug(" - value recieved: %u \n", newvalue);
 
-      updateState(newvalue); //saveState();
-      publishState(mqtt_topic_pub, state, &state_published); // force
+      updateState(newvalue); 
+      publishState(mqtt_topic_pub, state); // force
     }
   }
 }
@@ -89,14 +97,14 @@ void Device::subscribe() {
   }
 }
 
-void Device::publishState(String topic, ulong statepayload, bool* ptr_state_published) {
+void Device::publishState(String topic, ulong statepayload) {
   if (!_mqttClient) return;
   if (_mqttClient->connected()) {
     _mqttClient->publish(topic.c_str(), String(statepayload).c_str(), true);
 
     debug(" - message sent [%s] %s \n", topic.c_str(), String(statepayload).c_str());
 
-    *ptr_state_published = true;
+    state_published = true;
     state_publishedtime = millis();
   }
 }
@@ -141,6 +149,9 @@ void Device::saveState() {
   std::map<String, String> states;
   states.insert(std::pair<String, String>("state", String(state)));
   states.insert(std::pair<String, String>("state_last", String(state_last)));
+
+  state_saved = true;
+  state_savedtime = millis();
 
   _config->saveState(uid_filename, states);
 }

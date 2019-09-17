@@ -38,7 +38,7 @@ bool Config::loadConfig() {
   DynamicJsonBuffer jsonBuffer;
   JsonObject &root = jsonBuffer.parseObject(file);
 
-  //debug("\n-------------\t\tBEGIN OF FILE\t\t------------\n");
+  //debug("\n-------------\t\tLOADING FILE\t\t------------\n");
   //root.prettyPrintTo(Serial);
   //debug("\n-------------\t\tEND OF FILE\t\t------------\n\n");
 
@@ -91,7 +91,7 @@ void Config::saveConfig() {
     root[item.first] = item.second;
   }
 
-  //debug("\n-------------\t\tBEGIN OF FILE\t\t------------\n");
+  //debug("\n-------------\t\tSAVING FILE\t\t------------\n");
   //root.prettyPrintTo(Serial);
   //debug("\n-------------\t\tEND OF FILE\t\t------------\n\n");
 
@@ -111,7 +111,7 @@ std::map<String, String> Config::loadState(String filename)
   DynamicJsonBuffer jsonBuffer;
   JsonObject& root = jsonBuffer.parseObject(file);
 
-  debug("-------------\t\tBEGIN OF FILE\t\t------------\n");
+  debug("-------------\t\tLOADING FILE\t\t------------\n");
   root.prettyPrintTo(Serial);
   debug("\n-------------\t\tEND OF FILE\t\t------------\n");
 
@@ -135,7 +135,7 @@ void Config::saveState(String filename, std::map<String, String> states)
     root[statesPair.first] = statesPair.second;
   }
 
-  debug("-------------\t\tBEGIN OF FILE\t\t------------\n");
+  debug("-------------\t\tSAVING FILE\t\t------------\n");
   root.prettyPrintTo(Serial);
   debug("\n-------------\t\tEND OF FILE\t\t------------\n");
 

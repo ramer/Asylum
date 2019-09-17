@@ -13,14 +13,17 @@
 #include "Device.h"
 
 #include "src/Socket.h"
+#include "src/Encoder.h"
 
 // GLOBAL FIRMWARE CONFIGURATION
 
 //#define DEVICE_TYPE_SOCKET
-#define DEVICE_TYPE_TOUCHT1
+//#define DEVICE_TYPE_TOUCHT1
+//
 //#define DEVICE_TYPE_MOTOR
 //#define DEVICE_TYPE_STRIP
-//#define DEVICE_TYPE_ENCODER
+#define DEVICE_TYPE_ENCODER
+//#define DEVICE_TYPE_DISPLAY_32x8
 //
 //#define DEVICE_TYPE_ANALOGSENSOR
 
@@ -100,7 +103,11 @@ void setup() {
   devices.push_back(new Strip("Strip", 0, 13));                  // event, direction, action
 #endif
 #if (defined DEVICE_TYPE_ENCODER                        && defined ARDUINO_ESP8266_GENERIC)
-  devices.push_back(new Encoder("Encoder", 0, 14, 12, 13));        // event, action, A, B
+  devices.push_back(new Encoder("Encoder", 14, 12, 13));        // event, action, A, B
+#endif
+#if (defined DEVICE_TYPE_DISPLAY_32x8                   && defined ARDUINO_ESP8266_GENERIC)
+  //#include "devices/Display_32x8.h"
+  //devices.push_back(new Display_32x8("Display_32x8", 0, 12, 2, 13));        // up, down, left, right
 #endif
 
 // IMPORTANT: use Amperka WiFi Slot
