@@ -7,10 +7,10 @@ void blynk(bool setup) {
 
   if (setup)
   {
-    if (millis() - status_led_time > STATUS_LED_INTERVAL) {
-      status_led_time = millis();
-      status_led_state = !status_led_state;
-      digitalWrite(STATUS_LED, !status_led_state); // LED circuit inverted
+    if (millis() - time_status_led > INTERVAL_STATUS_LED) {
+      time_status_led = millis();
+      state_status_led = !state_status_led;
+      digitalWrite(STATUS_LED, !state_status_led); // LED circuit inverted
     }
   }
   else {

@@ -12,21 +12,23 @@
 #include "Config.h"
 #include "Device.h"
 
-#include "src/Socket.h"
-#include "src/Encoder.h"
 #include "src/Strip.h"
+#include "src/Encoder.h"
+#include "src/Socket.h"
+
 
 // GLOBAL FIRMWARE CONFIGURATION
 
 //#define DEVICE_TYPE_SOCKET
 //#define DEVICE_TYPE_TOUCHT1
-//
+
 //#define DEVICE_TYPE_MOTOR
 #define DEVICE_TYPE_STRIP
 //#define DEVICE_TYPE_ENCODER
 //#define DEVICE_TYPE_DISPLAY_32x8
-//
+
 //#define DEVICE_TYPE_ANALOGSENSOR
+
 
 // DEFINES
 
@@ -37,6 +39,7 @@
 #define PORT_DNS                53
 #define PORT_HTTP               80
 #define INTERVAL_STATUS_LED     500
+#define INTERVAL_STA_RECONNECT  30000
 
 String id;
 String id_macsuffix;
@@ -52,6 +55,7 @@ bool need_reboot = false;       // contains reboot flag
 bool config_updated = false;    // contains config updated flag
 bool force_ap = false;          // contains forced AP mode flag
 ulong force_ap_time;            // contains forced AP mode time
+ulong last_reconnect_time;     // contains last disconnected time in STA mode
 byte connect_attempts = 0;      // contains connection attempts, increases when client was disconnected
 
 
@@ -84,12 +88,12 @@ void setup() {
 #endif
 
 #if (defined DEVICE_TYPE_SOCKET)
-#define STATUS_LED              13    //inverted
-  devices.push_back(new Socket("Socket1", 0, 12));       // event, action
-  //devices.push_back(new Socket("Socket2", 2, 14));       // event, action
+#define STATUS_LED 13                                  //inverted
+  devices.push_back(new Socket("Socket1", 0, 12));     // event, action
+  //devices.push_back(new Socket("Socket2", 2, 14));   // event, action
 #endif
 #if (defined DEVICE_TYPE_TOUCHT1)
-#define STATUS_LED              13    //inverted
+#define STATUS_LED 13                                  //inverted
   devices.push_back(new Socket("TouchT1-1", 0, 12));   // event, action
   devices.push_back(new Socket("TouchT1-2", 9, 5));    // event, action
   //devices.push_back(new Socket("TouchT1-3", 10, 4)); // event, action
@@ -97,14 +101,13 @@ void setup() {
 
 // IMPORTANT: use Generic ESP8266 Module
 #if (defined DEVICE_TYPE_MOTOR                          && defined ARDUINO_ESP8266_GENERIC)    
-  devices.push_back(new Motor("Motor", 0, 12, 14));              // event, direction, action
+  devices.push_back(new Motor("Motor", 0, 12, 14));     // event, direction, action
 #endif
 #if (defined DEVICE_TYPE_STRIP                          && defined ARDUINO_ESP8266_GENERIC)
-#define PIN_LED 12                                    // redefine - we need GPIO 13 for LEDs
-  devices.push_back(new Strip("Strip", 0, 13));                  // event, direction, action
+  devices.push_back(new Strip("Strip", 13));            // action
 #endif
 #if (defined DEVICE_TYPE_ENCODER                        && defined ARDUINO_ESP8266_GENERIC)
-  devices.push_back(new Encoder("Encoder", 14, 12, 13));        // event, action, A, B
+  devices.push_back(new Encoder("Encoder", 14, 12, 13));// action, A, B
 #endif
 #if (defined DEVICE_TYPE_DISPLAY_32x8                   && defined ARDUINO_ESP8266_GENERIC)
   //#include "devices/Display_32x8.h"
@@ -212,7 +215,11 @@ void loop() {
         }
       }
       else {
-        if (connect_attempts >= 10) { // start AP when client if disconnected for 10 secs
+        if (millis() - last_reconnect_time > INTERVAL_STA_RECONNECT) {
+          last_reconnect_time = millis();
+          WiFi.reconnect();
+        }
+        if (connect_attempts >= 3) { // start AP when client if disconnected for 30 secs
           if (!APEnabled) StartAP();
         }
       }
@@ -279,7 +286,7 @@ void StartSTA() {
     debug("Connecting to access point: %s , password: %s \n", config.current["apssid"].c_str(), config.current["apkey"].c_str());
     WiFi.begin(config.current["apssid"].c_str(), config.current["apkey"].c_str());
     WiFi.setAutoConnect(true);
-    WiFi.setAutoReconnect(true);
+    WiFi.setAutoReconnect(false);
   }
   else {
     debug("Connecting to access point error: no SSID specified \n");
@@ -383,6 +390,7 @@ void mqttClient_connect() {
 void WiFi_onStationModeDisconnected(const WiFiEventStationModeDisconnected& evt) {
   debug("Disconnected from access point: %s, reason: %u, connect attempt: %u \n", evt.ssid.c_str(), evt.reason, connect_attempts);
   connect_attempts += 1;
+  last_reconnect_time = millis();
   if (config_ready && config.current["mode"].toInt() == 2) mqttClient.disconnect();
 }
 

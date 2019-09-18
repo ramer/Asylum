@@ -7,6 +7,7 @@ const char setup_html[] PROGMEM = R"~(<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Настройка устройства</title>
   <link rel="stylesheet" type="text/css" href="style.css">
+  <script type="text/javascript" src="script.js"></script>
 </head>
 <body>
     <div class="wrapper_full">
@@ -204,6 +205,14 @@ const char setup_html[] PROGMEM = R"~(<!DOCTYPE html>
         }())
     </script>
     <script>
+
+    </script>
+</body>
+
+</html>)~";
+
+
+const char script_js[] PROGMEM = R"~(/*/////////////// GLOBAL SCRIPTS ////////////////////*/
         /*
          * Change mode of operation
          */
@@ -337,6 +346,37 @@ const char setup_html[] PROGMEM = R"~(<!DOCTYPE html>
         }
 
         /*
+         * Color change event
+         */
+        function onColorChange(event) {
+            var el = event.target;
+            el.disabled = true;
+
+            var formData = [];
+            formData.push(encodeURIComponent('state') + '=' + encodeURIComponent(parseInt(el.value, 16)));
+            formData.push(encodeURIComponent('id') + '=' + encodeURIComponent(el.id));
+            formData = formData.join("&");
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('post', '/api_command', true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.send(formData);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState != XMLHttpRequest.DONE) return;
+
+                // alert response
+                if (xhr.status != 200) {
+                    el.disabled = false;
+                    alert(xhr.status + ': ' + xhr.statusText);
+                } else {
+                    var state = parseInt(xhr.responseText);
+                    el.disabled = false;
+                    el.value = "#" + state.toString(16);
+                }
+            }
+        }
+
+        /*
          * Range change event
          */
         function onRangeChange(event) {
@@ -436,12 +476,7 @@ const char setup_html[] PROGMEM = R"~(<!DOCTYPE html>
         } catch (err) {
             alert('Something went wrong: ' + err);
             fillForm([]);
-        }
-
-    </script>
-</body>
-
-</html>)~";
+        })~";
 
 const char style_html[] PROGMEM = R"~(/*/////////////// GLOBAL STYLES ////////////////////*/
 
