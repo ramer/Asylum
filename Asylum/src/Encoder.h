@@ -21,7 +21,6 @@ public:
   void update();
 
   void updateState(ulong state_new);
-  void invertState();
 
   void doEncoder();
 

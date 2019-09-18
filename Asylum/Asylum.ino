@@ -14,6 +14,7 @@
 
 #include "src/Socket.h"
 #include "src/Encoder.h"
+#include "src/Strip.h"
 
 // GLOBAL FIRMWARE CONFIGURATION
 
@@ -21,8 +22,8 @@
 //#define DEVICE_TYPE_TOUCHT1
 //
 //#define DEVICE_TYPE_MOTOR
-//#define DEVICE_TYPE_STRIP
-#define DEVICE_TYPE_ENCODER
+#define DEVICE_TYPE_STRIP
+//#define DEVICE_TYPE_ENCODER
 //#define DEVICE_TYPE_DISPLAY_32x8
 //
 //#define DEVICE_TYPE_ANALOGSENSOR

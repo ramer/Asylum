@@ -68,7 +68,8 @@ void Device::updateState(ulong state_new) {
 
 void Device::invertState() {
   if (state == state_off) {
-    updateState(state_last != state_off ? state_last : state_on);
+    if (state_last == state_off) { state_last = state_on; }
+    updateState(state_last);
   }
   else {
     updateState(state_off);
@@ -118,12 +119,12 @@ void Device::loadState() {
   if (onboot == 0) {
     // stay off
     debug(" - onboot: stay off \n");
-    updateState(0);
+    updateState(state_off);
   }
   else if (onboot == 1) {
     // turn on
     debug(" - onboot: turn on \n");
-    updateState(1);
+    updateState(state_on);
   }
   else if (onboot == 2) {
     // saved state

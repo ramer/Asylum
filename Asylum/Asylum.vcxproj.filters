@@ -42,6 +42,9 @@
     <ClInclude Include="src\Encoder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Strip.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config.cpp">
@@ -57,6 +60,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Encoder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Strip.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

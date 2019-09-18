@@ -337,6 +337,37 @@ const char setup_html[] PROGMEM = R"~(<!DOCTYPE html>
         }
 
         /*
+         * Range change event
+         */
+        function onRangeChange(event) {
+            var el = event.target;
+            el.disabled = true;
+
+            var formData = [];
+            formData.push(encodeURIComponent('state') + '=' + encodeURIComponent(+el.value));
+            formData.push(encodeURIComponent('id') + '=' + encodeURIComponent(el.id));
+            formData = formData.join("&");
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('post', '/api_command', true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.send(formData);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState != XMLHttpRequest.DONE) return;
+
+                // alert response
+                if (xhr.status != 200) {
+                    el.disabled = false;
+                    alert(xhr.status + ': ' + xhr.statusText);
+                } else {
+                    var state = parseInt(xhr.responseText);
+                    el.disabled = false;
+                    el.value = state;
+                }
+            }
+        }
+
+        /*
          * Run this on load
          */
 

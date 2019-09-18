@@ -5,8 +5,19 @@
 #include "Encoder.h"
 
 Encoder::Encoder(String prefix, byte action, byte eventA, byte eventB) : Device(prefix) {
+  pin_action = action;
   pin_eventA = eventA;
   pin_eventB = eventB;
+
+  state_on = 255;
+  state_off = 0;
+
+  html_control = R"~(
+    <div class="field-group">
+        <input id="uid" type="range" onchange="onRangeChange(event)" class="toggle" min="0" max="255" value="0" step="1">
+            <label for="uid"></label>
+        </input>
+    </div>)~";
 };
 
 void Encoder::initialize(PubSubClient* ptr_mqttClient, Config* ptr_config) {
@@ -27,7 +38,7 @@ void Encoder::initialize(PubSubClient* ptr_mqttClient, Config* ptr_config) {
 }
 
 void Encoder::update() {
-
+  // process encoder
   if (encoder_state != 0) {
     int new_state = constrain((int)state + encoder_state, 0, 255);
     encoder_state = 0;
@@ -61,12 +72,12 @@ void Encoder::doEncoder() {
   // debug("%s %s \n", a ? "| " : " |", b ? "| " : " |");
 
   // for optical encoder
-  //if (seqA == 0b00000011 && seqB == 0b00001001) new_state += ENCODER_STEP; // CW
-  //if (seqA == 0b00001001 && seqB == 0b00000011) new_state -= ENCODER_STEP; // CCW
+  if (seqA == 0b00000011 && seqB == 0b00001001) encoder_state += ENCODER_STEP; // CW
+  if (seqA == 0b00001001 && seqB == 0b00000011) encoder_state -= ENCODER_STEP; // CCW
 
   // for damaged test encoder
-  if (seqA == 0b00001011 && seqB == 0b00001001) encoder_state += ENCODER_STEP;
-  if (seqA == 0b00001001 && seqB == 0b00000011) encoder_state -= ENCODER_STEP;
+  //if (seqA == 0b00001011 && seqB == 0b00001001) encoder_state += ENCODER_STEP;
+  //if (seqA == 0b00001001 && seqB == 0b00000011) encoder_state -= ENCODER_STEP;
 }
 
 void Encoder::updateState(ulong state_new) {
@@ -84,16 +95,6 @@ void Encoder::updateState(ulong state_new) {
   state_publishedtime = millis();
 
   debug(" - state changed to %u \n", state_new);
-}
-
-void Encoder::invertState() {
-  if (state == state_off) {
-    if (state_last == 0) { state_last = 255; }
-    updateState(state_last);
-  }
-  else {
-    updateState(state_off);
-  }
 }
 
 #endif
