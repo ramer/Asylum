@@ -27,6 +27,13 @@ void Encoder::initialize(PubSubClient* ptr_mqttClient, Config* ptr_config) {
 }
 
 void Encoder::update() {
+
+  if (encoder_state != 0) {
+    int new_state = constrain((int)state + encoder_state, 0, 255);
+    encoder_state = 0;
+    if (new_state != state) updateState(new_state);
+  }
+
   // check state saved
   if (!state_saved && millis() - state_savedtime > INTERVAL_STATE_SAVE) { saveState(); }
 
@@ -51,20 +58,15 @@ void Encoder::doEncoder() {
   seqA &= 0b00001111;
   seqB &= 0b00001111;
 
-  debug("%s %s \n", a ? "| " : " |", b ? "| " : " |");
-  int new_state = state;
+  // debug("%s %s \n", a ? "| " : " |", b ? "| " : " |");
 
   // for optical encoder
-  if (seqA == 0b00000011 && seqB == 0b00001001) new_state += ENCODER_STEP; // CW
-  if (seqA == 0b00001001 && seqB == 0b00000011) new_state -= ENCODER_STEP; // CCW
+  //if (seqA == 0b00000011 && seqB == 0b00001001) new_state += ENCODER_STEP; // CW
+  //if (seqA == 0b00001001 && seqB == 0b00000011) new_state -= ENCODER_STEP; // CCW
 
   // for damaged test encoder
-  //if (seqA == 0b00001011 && seqB == 0b00001001) new_state += ENCODER_STEP;
-  //if (seqA == 0b00001001 && seqB == 0b00000011) new_state -= ENCODER_STEP;
-
-  if (state == new_state) return;
-
-  updateState(new_state < 0 ? 0 : (new_state > 255 ? 255 : new_state));
+  if (seqA == 0b00001011 && seqB == 0b00001001) encoder_state += ENCODER_STEP;
+  if (seqA == 0b00001001 && seqB == 0b00000011) encoder_state -= ENCODER_STEP;
 }
 
 void Encoder::updateState(ulong state_new) {
@@ -78,7 +80,10 @@ void Encoder::updateState(ulong state_new) {
   state_saved = false;
   state_published = false;
 
-  //debug(" - state changed to %u \n", state_new);
+  state_savedtime = millis();
+  state_publishedtime = millis();
+
+  debug(" - state changed to %u \n", state_new);
 }
 
 void Encoder::invertState() {

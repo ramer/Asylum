@@ -59,6 +59,9 @@ void Device::updateState(ulong state_new) {
   state_saved = false;
   state_published = false;
 
+  state_savedtime = millis();
+  state_publishedtime = millis();
+
   debug(" - state changed to %u \n", state_new);
   //updateStateCallback(state_new);
 }

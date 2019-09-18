@@ -32,11 +32,10 @@
 #define DEBUG
 //#define DEBUG_CORE
 
-#define STATUS_LED              13    //inverted
-
 #define WIFI_POWER              20.5
 #define PORT_DNS                53
 #define PORT_HTTP               80
+#define INTERVAL_STATUS_LED     500
 
 String id;
 String id_macsuffix;
@@ -49,15 +48,11 @@ bool config_ready = false;      // contains config.loadConfig() result;
 bool dnsserver_ready = false;   // contains config.loadConfig() result;
 bool is_updating = false;       // contains firmware uploading flag
 bool need_reboot = false;       // contains reboot flag
+bool config_updated = false;    // contains config updated flag
 bool force_ap = false;          // contains forced AP mode flag
 ulong force_ap_time;            // contains forced AP mode time
 byte connect_attempts = 0;      // contains connection attempts, increases when client was disconnected
 
-#ifdef STATUS_LED
-#define STATUS_LED_INTERVAL     500
-ulong status_led_time;
-bool  status_led_state;
-#endif
 
 DNSServer       dnsServer;
 WiFiClient      wifiClient;
@@ -76,6 +71,9 @@ WiFiEventHandler stationModeConnectedHandler;
 WiFiEventHandler stationModeGotIPHandler;
 WiFiEventHandler stationModeDisconnectedHandler;
 
+ulong time_status_led;
+bool  state_status_led;
+
 void setup() {
 #ifdef DEBUG
   Serial.begin(74880);
@@ -85,10 +83,12 @@ void setup() {
 #endif
 
 #if (defined DEVICE_TYPE_SOCKET)
+#define STATUS_LED              13    //inverted
   devices.push_back(new Socket("Socket1", 0, 12));       // event, action
   //devices.push_back(new Socket("Socket2", 2, 14));       // event, action
 #endif
 #if (defined DEVICE_TYPE_TOUCHT1)
+#define STATUS_LED              13    //inverted
   devices.push_back(new Socket("TouchT1-1", 0, 12));   // event, action
   devices.push_back(new Socket("TouchT1-2", 9, 5));    // event, action
   //devices.push_back(new Socket("TouchT1-3", 10, 4)); // event, action
@@ -231,9 +231,22 @@ void loop() {
     d->update();
   }
 
-  blynk((configmode == 1 || configmode == 2) && APEnabled);
+  if (config_updated) {
+    config_updated = false;
+    debug("Config updated. \n");
+    if (configmode == 0) { StopAP(); }
+    if (configmode == 1 || configmode == 2) { StopSTA(); }
+  }
 
-  check_reboot();
+  if (need_reboot) {
+    need_reboot = false;
+    debug("\n\nChip restarting.\n\n");
+    ESP.restart();
+  }
+
+#ifdef STATUS_LED
+  blynk((configmode == 1 || configmode == 2) && APEnabled);
+#endif
 }
 
 void StartAP() {

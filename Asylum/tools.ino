@@ -1,12 +1,4 @@
 ﻿
-void check_reboot() {
-  if (need_reboot) {
-    need_reboot = false;
-    debug("\n\nChip restarting.\n\n");
-    ESP.restart();
-  }
-}
-
 
 void blynk(bool setup) {
 

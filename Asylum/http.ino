@@ -48,10 +48,9 @@ void handleSubmit(AsyncWebServerRequest *request) {
   }
 
   config.saveConfig();
-  config_ready = true;
+  config_updated = true;
 
   request->send(200, "text/html", "Configuration saved.");
-  //got_config = true;
 }
 
 void handleApiConfig(AsyncWebServerRequest *request) {

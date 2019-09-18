@@ -32,6 +32,8 @@ protected:
   volatile byte seqA;
   volatile byte seqB;
 
+  volatile int encoder_state = 0;
+
   volatile bool pin_event_laststateA = false;
   volatile bool pin_event_laststateB = false;
 
