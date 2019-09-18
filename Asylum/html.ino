@@ -353,7 +353,7 @@ const char script_js[] PROGMEM = R"~(/*/////////////// GLOBAL SCRIPTS //////////
             el.disabled = true;
 
             var formData = [];
-            formData.push(encodeURIComponent('state') + '=' + encodeURIComponent(parseInt(el.value, 16)));
+            formData.push(encodeURIComponent('state') + '=' + encodeURIComponent(parseInt(el.value.replace("#", ""), 16)));
             formData.push(encodeURIComponent('id') + '=' + encodeURIComponent(el.id));
             formData = formData.join("&");
 
@@ -625,7 +625,7 @@ input[type="text"] {
     height: 30px;
 }
 
-input[type="radio"], input[type="checkbox"], input[type="submit"] {
+input[type="radio"], input[type="checkbox"], input[type="color"], input[type="range"], input[type="submit"] {
     width: auto;
 }
 
@@ -661,7 +661,7 @@ input[type="radio"], input[type="checkbox"], input[type="submit"] {
     input, select {
         width: 100%;
     }
-    input[type="radio"], input[type="checkbox"], input[type="submit"] {
+    input[type="radio"], input[type="checkbox"], input[type="color"], input[type="range"], input[type="submit"] {
         width: auto;
     }
     form .field-group {

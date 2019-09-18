@@ -7,7 +7,7 @@
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <Adafruit_NeoPixel.h>
+//#include <Adafruit_NeoPixel.h>
 #include "../Device.h"
 
 #define INTERVAL_STRIP_UPDATE 	10
@@ -51,7 +51,7 @@ protected:
   uint8_t stars[STRIP_LEDCOUNT];
   uint8_t sunrise_offset;
 
-  Adafruit_NeoPixel strip;
+  //Adafruit_NeoPixel strip;
 };
 
 #endif
