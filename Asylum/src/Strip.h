@@ -4,26 +4,29 @@
 
 #ifndef _STRIP_h
 #define _STRIP_h
+#define USE_HSV
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-//#include <Adafruit_NeoPixel.h>
+#include <Adafruit_NeoPixel.h>
 #include "../Device.h"
 
 #define INTERVAL_STRIP_UPDATE 	10
-#define INTERVAL_STRIP_RAINBOW	100
-#define INTERVAL_STRIP_STARS	  10
-#define INTERVAL_STRIP_SUNRISE	1000
 #define INTERVAL_STRIP_SOLID	  1000
+#define INTERVAL_STRIP_RAINBOW	100
+#define INTERVAL_STRIP_STARS	  100
+#define INTERVAL_STRIP_SUNRISE	5000
+#define INTERVAL_STRIP_SNAKE	  500
 
-#define STRIP_LEDCOUNT          121
-#define STARS_PROBABILITY       200
-#define STARS_INCREMENT         1
+#define STRIP_LEDCOUNT          64 //121
+
+#define STARS_PROBABILITY       400
+#define STARS_INCREMENT         0x010101
 
 class Strip : public Device
 {
 public:
-  Strip(String prefix, byte action);
+  Strip(String prefix, byte strip_pin);
 
   void initialize(PubSubClient* ptr_mqttClient, Config* ptr_config);
 
@@ -31,27 +34,32 @@ public:
 
   void updateState(ulong state_new);
 
+  uint32_t strip_wheel(byte angle);
+
+  Adafruit_NeoPixel *strip;
 
 protected:
 
-  void update_strip();
   void frame_solid();
   void frame_rainbow();
   void frame_stars();
   void frame_sunrise();
-  uint32_t strip_wheel(byte angle);
+	void frame_snake();
 
   ulong time_strip_update = 0;
+  ulong time_strip_solid = 0;
   ulong time_strip_rainbow = 0;
   ulong time_strip_stars = 0;
-  ulong time_strip_sunrise = 0;
-  ulong time_strip_solid = 0;
+	ulong time_strip_sunrise = 0;
+	ulong time_strip_snake = 0;
 
   uint8_t rainbow_offset;
-  uint8_t stars[STRIP_LEDCOUNT];
   uint8_t sunrise_offset;
+	uint16_t snake_food = random(STRIP_LEDCOUNT);
+	uint16_t snake = random(STRIP_LEDCOUNT);
 
-  //Adafruit_NeoPixel strip;
+	void increase(uint16_t* cur, uint16_t max);
+	void decrease(uint16_t* cur, uint16_t max);
 };
 
 #endif

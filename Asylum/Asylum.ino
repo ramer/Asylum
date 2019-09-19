@@ -104,7 +104,8 @@ void setup() {
   devices.push_back(new Motor("Motor", 0, 12, 14));     // event, direction, action
 #endif
 #if (defined DEVICE_TYPE_STRIP                          && defined ARDUINO_ESP8266_GENERIC)
-  devices.push_back(new Strip("Strip", 13));            // action
+	//Adafruit_NeoPixel strip = ;
+	devices.push_back(new Strip("Strip", 13));            // action
 #endif
 #if (defined DEVICE_TYPE_ENCODER                        && defined ARDUINO_ESP8266_GENERIC)
   devices.push_back(new Encoder("Encoder", 14, 12, 13));// action, A, B
