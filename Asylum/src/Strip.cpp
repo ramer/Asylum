@@ -5,7 +5,7 @@
 #include "strip.h"
 
 Strip::Strip(String prefix, byte strip_pin) : Device(prefix) {
-	strip = new Adafruit_NeoPixel(STRIP_LEDCOUNT, strip_pin, NEO_GRB + NEO_KHZ800);
+	strip = new Adafruit_NeoPixel(STRIP_LEDCOUNT, strip_pin, NEO_BRG + NEO_KHZ400);
 
   state_on = 0xFFFFFF;
   state_off = 0;
@@ -77,13 +77,17 @@ void Strip::updateState(ulong state_new) {
 	time_strip_sunrise = 0;
 	time_strip_solid = 0;
 
+  solid_updated = false;
+  sunrise_offset = 0;
+
   debug(" - state changed to %u \n", state_new);
 }
 
 void Strip::frame_solid() {
-  if (millis() - time_strip_solid > INTERVAL_STRIP_SOLID) {
+  if (millis() - time_strip_solid > INTERVAL_STRIP_SOLID || !solid_updated) {
     time_strip_solid = millis();
-    
+    solid_updated = true;
+
     uint8_t r = state >> 16;
     uint8_t g = state >> 8 & 0xFF;
     uint8_t b = state & 0xFF;
@@ -93,7 +97,6 @@ void Strip::frame_solid() {
     }
 
     strip->show();
-    sunrise_offset = 0; // prevent sunrise start from the middle
   }
 }
 
@@ -162,21 +165,23 @@ void Strip::frame_snake() {
 		time_strip_snake = millis();
 
 		for (uint16_t i = 0; i < strip->numPixels(); i++) {
-			strip->setPixelColor(i, strip->getPixelColor(i) / 2);
+      strip->setPixelColor(i, strip->getPixelColor(i) / 2);
 		}
 
-		strip->setPixelColor(snake_food, 0xFF0000);
+		strip->setPixelColor(snake_food, 0xFF00FF);
 		strip->setPixelColor(snake, 0x00FF00);
 
-		bool dir = (snake < snake_food) ^ (abs((int)snake - (int)snake_food) > strip->numPixels() / 2);
-		if (dir) {
+		if (snake_direction) {
 			increase(&snake, strip->numPixels() - 1);
 		}
 		else {
 			decrease(&snake, strip->numPixels() - 1);
 		}
 
-		if (snake = snake_food) snake_food = random(strip->numPixels());
+    if (snake == snake_food) {
+      snake_food = random(strip->numPixels());
+      snake_direction = (snake < snake_food) ^ (abs((int)snake - (int)snake_food) > strip->numPixels() / 2);
+    }
 
 		strip->show();
 	}

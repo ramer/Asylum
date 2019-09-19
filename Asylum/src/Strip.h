@@ -12,13 +12,13 @@
 #include "../Device.h"
 
 #define INTERVAL_STRIP_UPDATE 	10
-#define INTERVAL_STRIP_SOLID	  1000
+#define INTERVAL_STRIP_SOLID	  3600000
 #define INTERVAL_STRIP_RAINBOW	100
 #define INTERVAL_STRIP_STARS	  100
 #define INTERVAL_STRIP_SUNRISE	5000
-#define INTERVAL_STRIP_SNAKE	  500
+#define INTERVAL_STRIP_SNAKE	  100
 
-#define STRIP_LEDCOUNT          64 //121
+#define STRIP_LEDCOUNT          121
 
 #define STARS_PROBABILITY       400
 #define STARS_INCREMENT         0x010101
@@ -57,6 +57,8 @@ protected:
   uint8_t sunrise_offset;
 	uint16_t snake_food = random(STRIP_LEDCOUNT);
 	uint16_t snake = random(STRIP_LEDCOUNT);
+  bool solid_updated;
+  bool snake_direction = false;
 
 	void increase(uint16_t* cur, uint16_t max);
 	void decrease(uint16_t* cur, uint16_t max);

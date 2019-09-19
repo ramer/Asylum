@@ -55,7 +55,7 @@ bool need_reboot = false;       // contains reboot flag
 bool config_updated = false;    // contains config updated flag
 bool force_ap = false;          // contains forced AP mode flag
 ulong force_ap_time;            // contains forced AP mode time
-ulong last_reconnect_time;     // contains last disconnected time in STA mode
+ulong last_reconnect_time;      // contains last disconnected time in STA mode
 byte connect_attempts = 0;      // contains connection attempts, increases when client was disconnected
 
 
@@ -117,8 +117,8 @@ void setup() {
 
 // IMPORTANT: use Amperka WiFi Slot
 #if (defined DEVICE_TYPE_ANALOGSENSOR                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
-#define PIN_MODE	A5	                                // inverted
-#define PIN_LED   A2                                  // inverted
+#define PIN_MODE	A5	                                  // inverted
+#define PIN_LED   A2                                    // inverted
   devices.push_back(new AnalogSensor("AnalogSensor", A5, A2, A6));      // event, action, sensor
 #endif 
 
@@ -356,20 +356,33 @@ void WiFi_onStationModeGotIP(const WiFiEventStationModeGotIP& evt) {
 
 void mqttClient_connect() {
   if (mqttClient.connected()) return;
+  
+  uint8_t mac_int[6];
+  WiFi.macAddress(mac_int);
+  String mac_str = "";
+  for (int i = 0; i < sizeof(mac_int); ++i) {
+    mac_str += String(mac_int[i], HEX);
+  }
+
+  char willmessage[MQTT_MAX_PACKET_SIZE];
+  snprintf(willmessage, sizeof(willmessage), "{\"mac\":\"%s\",\"status\":\"disconnected\",\"desc\":\"%s\"}", mac_str.c_str(), config.current["description"].c_str());
 
   debug("Connecting to MQTT server: %s as %s , auth %s : %s ... ", config.current["mqttserver"].c_str(), id.c_str(), config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str());
-
-  if (mqttClient.connect(id.c_str(), config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str())) {
+  if (mqttClient.connect(id.c_str(), config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str(), mqtt_global_topic_status.c_str(), 0, true, willmessage, true)) {
     debug("connected, state = %i \n", mqttClient.state());
 
     mqttClient.subscribe(mqtt_global_topic_setup.c_str());
     mqttClient.subscribe(mqtt_global_topic_reboot.c_str());
 
-    mqtt_publishStatus();
-
-    for (auto &d : devices) {
+    for (auto& d : devices) {
       d->subscribe();
     }
+
+    char payload[MQTT_MAX_PACKET_SIZE];
+    snprintf(payload, sizeof(payload), "{\"mac\":\"%s\",\"ip\":\"%s\",\"status\":\"connected\",\"desc\":\"%s\"}", mac_str.c_str(), WiFi.localIP().toString().c_str(), config.current["description"].c_str());
+    mqttClient.publish(mqtt_global_topic_status.c_str(), payload, true);
+
+    debug(" - message sent [%s] %s \n", mqtt_global_topic_status.c_str(), payload);
   }
   else
   {
@@ -417,20 +430,22 @@ void mqtt_callback(char* tp, byte* pl, unsigned int length) {
   }
 }
 
-void mqtt_publishStatus() {
-  if (!mqttClient.connected()) return;
-    
-  char payload[MQTT_MAX_PACKET_SIZE];
+void blynk(bool setup) {
 
-  uint8_t mac_int[6];
-  WiFi.macAddress(mac_int);
-  String mac_str = "";
-  for (int i = 0; i < sizeof(mac_int); ++i) {
-    mac_str += String(mac_int[i], HEX);
+#ifdef STATUS_LED
+  pinMode(STATUS_LED, OUTPUT);
+
+  if (setup)
+  {
+    if (millis() - time_status_led > INTERVAL_STATUS_LED) {
+      time_status_led = millis();
+      state_status_led = !state_status_led;
+      digitalWrite(STATUS_LED, !state_status_led); // LED circuit inverted
+    }
+  }
+  else {
+    digitalWrite(STATUS_LED, (config.current["onboardled"].toInt() == 0 ? HIGH : LOW)); // LED circuit inverted
   }
 
-  snprintf(payload, sizeof(payload), "{\"MAC\":\"%s\",\"IP\":\"%s\"}", mac_str.c_str(), WiFi.localIP().toString().c_str());
-  mqttClient.publish(mqtt_global_topic_status.c_str(), payload, true);
-
-  debug(" - message sent [%s] %s \n", mqtt_global_topic_status.c_str(), payload);
+#endif
 }

@@ -38,9 +38,9 @@ bool Config::loadConfig() {
   DynamicJsonBuffer jsonBuffer;
   JsonObject &root = jsonBuffer.parseObject(file);
 
-  //debug("\n-------------\t\tLOADING FILE\t\t------------\n");
+  //debug("\n-------------\tLOADING FILE\t------------\n");
   //root.prettyPrintTo(Serial);
-  //debug("\n-------------\t\tEND OF FILE\t\t------------\n\n");
+  //debug("\n-------------\tEND OF FILE\t------------\n\n");
 
   if (!root.success()) {
     debug("Parsing Configuration file (%s): failed. Using default configuration \n", file.name());
@@ -91,9 +91,9 @@ void Config::saveConfig() {
     root[item.first] = item.second;
   }
 
-  //debug("\n-------------\t\tSAVING FILE\t\t------------\n");
+  //debug("\n-------------\tSAVING FILE\t------------\n");
   //root.prettyPrintTo(Serial);
-  //debug("\n-------------\t\tEND OF FILE\t\t------------\n\n");
+  //debug("\n-------------\tEND OF FILE\t------------\n\n");
 
   if (root.printTo(file) == 0)
   {
@@ -111,9 +111,9 @@ std::map<String, String> Config::loadState(String filename)
   DynamicJsonBuffer jsonBuffer;
   JsonObject& root = jsonBuffer.parseObject(file);
 
-  debug("-------------\t\tLOADING FILE\t\t------------\n");
-  root.prettyPrintTo(Serial);
-  debug("\n-------------\t\tEND OF FILE\t\t------------\n");
+  //debug("-------------\tLOADING FILE\t------------\n");
+  //root.prettyPrintTo(Serial);
+  //debug("\n-------------\tEND OF FILE\t------------\n");
 
   if (!root.success()) { file.close(); return states; }
   for (auto& jsonPair : root) {
@@ -135,9 +135,9 @@ void Config::saveState(String filename, std::map<String, String> states)
     root[statesPair.first] = statesPair.second;
   }
 
-  debug("-------------\t\tSAVING FILE\t\t------------\n");
-  root.prettyPrintTo(Serial);
-  debug("\n-------------\t\tEND OF FILE\t\t------------\n");
+  //debug("-------------\tSAVING FILE\t------------\n");
+  //root.prettyPrintTo(Serial);
+  //debug("\n-------------\tEND OF FILE\t------------\n");
 
   root.printTo(file);
   file.close();
