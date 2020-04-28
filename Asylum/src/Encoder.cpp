@@ -1,6 +1,6 @@
 // Encoder.cpp
 
-#ifdef ARDUINO_ESP8266_GENERIC
+#if (defined DEVICE_TYPE_ENCODER && defined ARDUINO_ESP8266_GENERIC)
 
 #include "Encoder.h"
 

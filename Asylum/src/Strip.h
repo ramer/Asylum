@@ -1,6 +1,6 @@
 // Strip.h
 
-#ifdef ARDUINO_ESP8266_GENERIC
+#if (defined DEVICE_TYPE_STRIP && defined ARDUINO_ESP8266_GENERIC)
 
 #ifndef _STRIP_h
 #define _STRIP_h

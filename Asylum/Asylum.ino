@@ -7,6 +7,7 @@
 #include <DNSServer.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include <Hash.h>
 
 #include "Debug.h"
 #include "Config.h"
@@ -19,11 +20,11 @@
 
 // GLOBAL FIRMWARE CONFIGURATION
 
-//#define DEVICE_TYPE_SOCKET
+#define DEVICE_TYPE_SOCKET
 //#define DEVICE_TYPE_TOUCHT1
 
 //#define DEVICE_TYPE_MOTOR
-#define DEVICE_TYPE_STRIP
+//#define DEVICE_TYPE_STRIP
 //#define DEVICE_TYPE_ENCODER
 //#define DEVICE_TYPE_DISPLAY_32x8
 
@@ -32,7 +33,6 @@
 
 // DEFINES
 
-#define DEBUG
 //#define DEBUG_CORE
 
 #define WIFI_POWER              20.5
@@ -58,7 +58,6 @@ ulong force_ap_time;            // contains forced AP mode time
 ulong last_reconnect_time;      // contains last disconnected time in STA mode
 byte connect_attempts = 0;      // contains connection attempts, increases when client was disconnected
 
-
 DNSServer       dnsServer;
 WiFiClient      wifiClient;
 PubSubClient    mqttClient(wifiClient);
@@ -80,17 +79,15 @@ ulong time_status_led;
 bool  state_status_led;
 
 void setup() {
-#ifdef DEBUG
+	//delay(5000);
   Serial.begin(74880);
 #ifdef DEBUG_CORE
   Serial.setDebugOutput(true);
 #endif
-#endif
 
 #if (defined DEVICE_TYPE_SOCKET)
 #define STATUS_LED 13                                  //inverted
-  devices.push_back(new Socket("Socket1", 0, 12));     // event, action
-  //devices.push_back(new Socket("Socket2", 2, 14));   // event, action
+	devices.push_back(new Socket("Socket1", 0, 12));     // event, action
 #endif
 #if (defined DEVICE_TYPE_TOUCHT1)
 #define STATUS_LED 13                                  //inverted
@@ -122,7 +119,6 @@ void setup() {
   devices.push_back(new AnalogSensor("AnalogSensor", A5, A2, A6));      // event, action, sensor
 #endif 
 
-
   // Initialize chip
   debug("\n\n\n");
   uint8_t mac[6]; WiFi.macAddress(mac);
@@ -151,7 +147,17 @@ void setup() {
   debug("Mounting SPIFFS ... ");
   spiffs_ready = SPIFFS.begin();
   if (spiffs_ready) {
-    debug("success \n");
+		debug("success \n");
+
+		FSInfo fsinfo;
+		SPIFFS.info(fsinfo);
+		debug(" - totalBytes: %s \n", String(fsinfo.totalBytes).c_str());
+		debug(" - usedBytes: %s \n", String(fsinfo.usedBytes).c_str());
+		debug(" - blockSize: %s \n", String(fsinfo.blockSize).c_str());
+		debug(" - pageSize: %s \n", String(fsinfo.pageSize).c_str());
+		debug(" - maxOpenFiles: %s \n", String(fsinfo.maxOpenFiles).c_str());
+		debug(" - maxPathLength: %s \n", String(fsinfo.maxPathLength).c_str());
+
     config_ready = config.loadConfig();
     if (config_ready) debug("Initial config mode is %u \n", config.current["mode"].toInt());
   }
@@ -242,6 +248,7 @@ void loop() {
 
   if (config_updated) {
     config_updated = false;
+		config_ready = true;
     debug("Config updated. \n");
     if (configmode == 0) { StopAP(); }
     if (configmode == 1 || configmode == 2) { StopSTA(); }
@@ -254,7 +261,7 @@ void loop() {
   }
 
 #ifdef STATUS_LED
-  blynk((configmode == 1 || configmode == 2) && APEnabled);
+  blynk(!config_ready || ((configmode == 1 || configmode == 2) && APEnabled));
 #endif
 }
 
@@ -367,8 +374,14 @@ void mqttClient_connect() {
   char willmessage[MQTT_MAX_PACKET_SIZE];
   snprintf(willmessage, sizeof(willmessage), "{\"mac\":\"%s\",\"status\":\"disconnected\",\"desc\":\"%s\"}", mac_str.c_str(), config.current["description"].c_str());
 
-  debug("Connecting to MQTT server: %s as %s , auth %s : %s ... ", config.current["mqttserver"].c_str(), id.c_str(), config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str());
-  if (mqttClient.connect(id.c_str(), config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str(), mqtt_global_topic_status.c_str(), 0, true, willmessage, true)) {
+  debug("Connecting to MQTT server with Will message: %s as %s , auth %s : %s ... ", config.current["mqttserver"].c_str(), id.c_str(), config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str());
+	bool connected = mqttClient.connect(id.c_str(), config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str(), mqtt_global_topic_status.c_str(), 0, true, willmessage, true);
+	if (!connected) {
+		debug("failed, state = %i \n", mqttClient.state());
+		debug("Connecting to MQTT server: %s as %s , auth %s : %s ... ", config.current["mqttserver"].c_str(), id.c_str(), config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str());
+		connected = mqttClient.connect(id.c_str(), config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str());
+	}
+	if (connected) {
     debug("connected, state = %i \n", mqttClient.state());
 
     mqttClient.subscribe(mqtt_global_topic_setup.c_str());

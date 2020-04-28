@@ -18,6 +18,7 @@ extern "C" {
 
 #define CONFIG_FILENAME_CONFIG "/config.json"
 #define CONFIG_VALIDATOR "x"
+#define CONFIG_DEBUG
 
 class Config {
 public:

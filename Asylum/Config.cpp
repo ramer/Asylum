@@ -24,6 +24,8 @@ Config::Config() {
 bool Config::loadConfig() {
   debug("Reading Configuration file (%s) ... ", String(CONFIG_FILENAME_CONFIG).c_str());
 
+	std::map<String, String> newconfig;
+
   File file = SPIFFS.open(CONFIG_FILENAME_CONFIG, "r");
   if (!file)
   {
@@ -35,36 +37,41 @@ bool Config::loadConfig() {
     debug("success \n");
   }
 
-  DynamicJsonBuffer jsonBuffer;
-  JsonObject &root = jsonBuffer.parseObject(file);
+	const size_t capacity = 1024; //JSON_OBJECT_SIZE(predefined.size()) + 512;
+	DynamicJsonDocument doc(capacity);
+	DeserializationError err = deserializeJson(doc, file);
 
-  //debug("\n-------------\tLOADING FILE\t------------\n");
-  //root.prettyPrintTo(Serial);
-  //debug("\n-------------\tEND OF FILE\t------------\n\n");
+#ifdef CONFIG_DEBUG
+  debug("\n-------------\tLOADING FILE\t------------\n");
+	serializeJsonPretty(doc, Serial);
+	debug("\n-------------\tEND OF FILE\t------------\n\n");
+#endif
 
-  if (!root.success()) {
-    debug("Parsing Configuration file (%s): failed. Using default configuration \n", file.name());
-    current = predefined;
-    file.close();
+  if (err) {
+    debug("Parsing Configuration file (%s): failed (%s). Using default configuration \n", file.name(), err.c_str());
+		file.close();
+		current = predefined;
     return false;
   }
-  if (!root.containsKey("validator") || root["validator"] != CONFIG_VALIDATOR) {
+  if (!doc.containsKey("validator") || doc["validator"] != CONFIG_VALIDATOR) {
     debug("Validating Configuration file (%s): failed. Using default configuration \n", file.name());
-    current = predefined;
-    file.close();
-    return false;
-  }
+		file.close();
+		current = predefined;
+		return false;
+	}
 
   for (auto &itemPredefined : predefined) {
-    if (!root.containsKey(itemPredefined.first)) {
-      debug("Configuration file (%s) does not have (%s) key, using default value (%s)", file.name(), itemPredefined.first.c_str(), itemPredefined.second.c_str());
-      current.insert(itemPredefined);
+    if (!doc.containsKey(itemPredefined.first)) {
+      debug(" - configuration file does not have (%s) key, using default value (%s) \n", itemPredefined.first.c_str(), itemPredefined.second.c_str());
+			newconfig.insert(itemPredefined);
     }
     else {
-      current[itemPredefined.first] = root[itemPredefined.first].as<String>();
+			newconfig.insert(std::pair<String, String>(itemPredefined.first, doc[itemPredefined.first].as<String>()));
     }
   }
   file.close();
+
+	current = newconfig;
 
   return true;
 }
@@ -76,31 +83,30 @@ void Config::saveConfig() {
   if (!file)
   {
     debug("failed: cannot be created \n");
-    return;
+		return;
   }
-  else {
-    debug("success \n");
-  }
+	debug("success \n");
 
-  DynamicJsonBuffer jsonBuffer;
-  JsonObject &root = jsonBuffer.createObject();
+	const size_t capacity = 1024; //JSON_OBJECT_SIZE(predefined.size());
+	DynamicJsonDocument doc(capacity);
 
-  root["validator"] = CONFIG_VALIDATOR;
+	doc["validator"] = CONFIG_VALIDATOR;
 
-  for (auto &item : current) {
-    root[item.first] = item.second;
-  }
+	for (auto &item : current) {
+		doc[item.first] = item.second;
+	}
 
-  //debug("\n-------------\tSAVING FILE\t------------\n");
-  //root.prettyPrintTo(Serial);
-  //debug("\n-------------\tEND OF FILE\t------------\n\n");
+#ifdef CONFIG_DEBUG
+	debug("\n-------------\tSAVING FILE\t------------\n");
+	serializeJsonPretty(doc, Serial);
+	debug("\n-------------\tEND OF FILE\t------------\n\n");
+#endif
 
-  if (root.printTo(file) == 0)
-  {
-    debug("Writing Configuration file (%s): failed.", file.name());
-  }
-
-  file.close();
+	if (serializeJson(doc, file) == 0)
+	{
+		debug("Writing Configuration file (%s): failed. \n ", file.name());
+	}
+	file.close();
 }
 
 std::map<String, String> Config::loadState(String filename)
@@ -108,16 +114,20 @@ std::map<String, String> Config::loadState(String filename)
   std::map<String, String> states;
   File file = SPIFFS.open(filename.c_str(), "r");
   if (!file) return states;
-  DynamicJsonBuffer jsonBuffer;
-  JsonObject& root = jsonBuffer.parseObject(file);
 
-  //debug("-------------\tLOADING FILE\t------------\n");
-  //root.prettyPrintTo(Serial);
-  //debug("\n-------------\tEND OF FILE\t------------\n");
+	const size_t capacity = 128; //JSON_OBJECT_SIZE(3) + 64;
+	DynamicJsonDocument doc(capacity);
+	DeserializationError err = deserializeJson(doc, file);
 
-  if (!root.success()) { file.close(); return states; }
-  for (auto& jsonPair : root) {
-    states.insert(std::pair<String, String>(String(jsonPair.key), String(jsonPair.value.asString())));
+#ifdef CONFIG_DEBUG
+	debug("-------------\tLOADING FILE\t------------\n");
+	serializeJsonPretty(doc, Serial);
+	debug("\n-------------\tEND OF FILE\t------------\n");
+#endif
+
+  if (err) { file.close(); return states; }
+  for (JsonPair jsonPair : doc.to<JsonObject>()) {
+    states.insert(std::pair<String, String>(String(jsonPair.key().c_str()), jsonPair.value().as<String>()));
   }
   file.close();
   return states;
@@ -128,17 +138,21 @@ void Config::saveState(String filename, std::map<String, String> states)
   File file = SPIFFS.open(filename.c_str(), "w");
   if (!file) return;
 
-  DynamicJsonBuffer jsonBuffer;
-  JsonObject& root = jsonBuffer.createObject();
+	const size_t capacity = 128; //JSON_OBJECT_SIZE(states.size());
+	DynamicJsonDocument doc(capacity);
 
   for (auto& statesPair : states) {
-    root[statesPair.first] = statesPair.second;
+    doc[statesPair.first] = statesPair.second;
   }
 
-  //debug("-------------\tSAVING FILE\t------------\n");
-  //root.prettyPrintTo(Serial);
-  //debug("\n-------------\tEND OF FILE\t------------\n");
+#ifdef CONFIG_DEBUG
+	debug("-------------\tSAVING FILE\t------------\n");
+	serializeJsonPretty(doc, Serial);
+  debug("\n-------------\tEND OF FILE\t------------\n");
+#endif
 
-  root.printTo(file);
-  file.close();
+	if (serializeJson(doc, file) == 0) {
+		debug("Writing State file (%s): failed.", file.name());
+	}
+	file.close();
 }

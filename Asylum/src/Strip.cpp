@@ -1,6 +1,6 @@
 // strip->cpp
 
-#ifdef ARDUINO_ESP8266_GENERIC
+#if (defined DEVICE_TYPE_STRIP && defined ARDUINO_ESP8266_GENERIC)
 
 #include "strip.h"
 
