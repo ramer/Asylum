@@ -16,7 +16,7 @@ extern "C" {
 #include "spi_flash.h"
 }
 
-#define CONFIG_DEBUG
+//#define CONFIG_DEBUG
 
 #define CONFIG_FILENAME_CONFIG "/config.json"
 #define CONFIG_VALIDATOR "x"

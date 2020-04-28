@@ -14,7 +14,7 @@ Device::Device(String prefix) {
 
 Device::~Device() {}
 
-void Device::initialize(PubSubClient* ptr_mqttClient, Config* ptr_config) {
+void Device::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config) {
   _mqttClient = ptr_mqttClient;
   _config = ptr_config;
 
@@ -98,14 +98,14 @@ void Device::handlePayload(String topic, String payload) {
 void Device::subscribe() {
   if (!_mqttClient) return;
   if (_mqttClient->connected()) {
-    _mqttClient->subscribe(mqtt_topic_sub.c_str());
+    _mqttClient->subscribe(mqtt_topic_sub.c_str(), 0);
   }
 }
 
 void Device::publishState(String topic, ulong statepayload) {
   if (!_mqttClient) return;
   if (_mqttClient->connected()) {
-    _mqttClient->publish(topic.c_str(), String(statepayload).c_str(), true);
+    _mqttClient->publish(topic.c_str(), 1, true, String(statepayload).c_str());
 
     debug(" - message sent [%s] %s \n", topic.c_str(), String(statepayload).c_str());
 

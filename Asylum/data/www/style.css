@@ -1,0 +1,205 @@
+/*/////////////// GLOBAL STYLES ////////////////////*/
+
+body {
+    padding: 24px;
+    background: white;
+}
+
+.wrapper_full {
+    margin: auto;
+    max-width: 100%;
+}
+
+.wrapper_fixed {
+    margin: auto;
+    max-width: 600px;
+}
+
+header {
+    padding: 12px;
+    margin-bottom: 30px;
+}
+
+/*/////////////// FONT STYLES ////////////////////*/
+
+html {
+    font-size: 62.5%;
+}
+
+body, textarea {
+    font-family: 'Verdana, Geneva, sans-serif';
+}
+
+h1 {
+    font-size: 3rem;
+}
+
+h2 {
+    font-size: 1.6rem;
+}
+
+/*/////////////// FORM STYLES ////////////////////*/
+
+form {
+    background-color: #fff;
+    border-radius: 7px;
+    border: 1px solid #c1c1c1;
+    background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#f3f3f3));
+    background: -moz-linear-gradient(top, #fff, #f3f3f3);
+    font-size: 1.4rem;
+    padding: 12px;
+    color: #222;
+}
+
+    form .field-group {
+        display: flex;
+        margin: 0 0 12px 0;
+    }
+
+        form .field-group .label {
+            flex: 1;
+            text-align: right;
+            margin: 0 8px 0 0;
+            padding: 4px 4px;
+        }
+
+        form .field-group .upload {
+            flex: 1;
+            text-align: right;
+            font-size: 1rem;
+            color: black;
+            float: right;
+            text-decoration: none;
+            padding: 4px 4px;
+        }
+
+        form .field-group .field {
+            flex: 3;
+        }
+
+            form .field-group .field .field_absolute_wrapper {
+                width: 50%;
+                position: relative;
+                box-sizing: border-box;
+                padding-right: 21px;
+            }
+
+                form .field-group .field .field_absolute_wrapper .field_absolute_back {
+                    width: 100%;
+                    position: absolute;
+                }
+
+                form .field-group .field .field_absolute_wrapper .field_absolute_front {
+                    width: 100%;
+                    position: relative;
+                    z-index: 100;
+                }
+
+        form .field-group:last-child {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+            form .field-group:last-child .field {
+                max-width: 75%;
+            }
+
+input, select, textarea {
+    padding: 4px 4px;
+    font-size: 1.6rem;
+    border: solid 1px #eee;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+select {
+    border: solid 1px #c1c1c1;
+    height: 30px;
+}
+
+input:disabled {
+    background: #eee;
+}
+
+input:invalid {
+    border: 1px solid red;
+}
+
+input:valid {
+    border: 1px solid #c1c1c1;
+}
+
+select:focus, input:focus {
+    outline: none;
+}
+
+textarea {
+    width: 100%;
+}
+
+input, select {
+    width: 50%;
+}
+
+    input[type="text"] {
+        height: 30px;
+    }
+
+    input[type="radio"], input[type="checkbox"], input[type="color"], input[type="range"], input[type="submit"] {
+        width: auto;
+    }
+
+.flexy {
+    display: flex;
+    flex-direction: row;
+}
+
+    .flexy .testbutton {
+        width: 100px;
+    }
+
+    .flexy .first {
+        width: 130px;
+    }
+
+/*/////////////// RWD STYLES ////////////////////*/
+
+@media (max-width: 720px) {
+    form .field-group .label {
+        text-align: left;
+        margin: 0;
+    }
+
+    input, select {
+        width: 85%;
+    }
+
+    form .field-group .field .field_absolute_wrapper {
+        width: 85%;
+    }
+}
+
+@media (max-width: 480px) {
+    input, select {
+        width: 100%;
+    }
+
+        input[type="radio"], input[type="checkbox"], input[type="color"], input[type="range"], input[type="submit"] {
+            width: auto;
+        }
+
+    form .field-group {
+        display: flex;
+        flex-direction: column;
+        margin: 0 0 6px 0;
+    }
+
+        form .field-group .label {
+            padding: 0 0 5px 0;
+            margin: 10px 0 0 0;
+        }
+
+        form .field-group .field .field_absolute_wrapper {
+            width: 100%;
+        }
+}

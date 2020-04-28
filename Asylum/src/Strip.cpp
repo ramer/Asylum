@@ -18,7 +18,7 @@ Strip::Strip(String prefix, byte strip_pin) : Device(prefix) {
     </div>)~";
 };
 
-void Strip::initialize(PubSubClient* ptr_mqttClient, Config* ptr_config) {
+void Strip::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config) {
   _mqttClient = ptr_mqttClient;
   _config = ptr_config;
 

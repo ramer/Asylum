@@ -1,19 +1,23 @@
-﻿
+
 extern "C" uint32_t _SPIFFS_start;
 extern "C" uint32_t _SPIFFS_end;
 
 void httpServer_SetupHandlers() {
-  //httpServer.serveStatic("/", SPIFFS, "/"); // .setDefaultFile("setup.html"); // .setAuthentication(config.cur_conf["locallogin"].c_str(), config.cur_conf["localpassword"].c_str());
+  httpServer.serveStatic("/", SPIFFS, "/www/").setDefaultFile("index.html").setAuthentication(config.current["locallogin"].c_str(), config.current["localpassword"].c_str());
+  httpServer.serveStatic("/script.js", SPIFFS, "/www/script.js");
+  httpServer.serveStatic("/style.css", SPIFFS, "/www/style.css");
+  httpServer.serveStatic("/favicon.ico", SPIFFS, "/www/favicon.ico");
 
-  httpServer.on("/setup", HTTP_GET, handleSetup);
-  httpServer.on("/script.js", HTTP_GET, handleScript);
-  httpServer.on("/style.css", HTTP_GET, handleStyle);
+  //httpServer.on("/setup", HTTP_GET, handleSetup);
+  //httpServer.on("/script.js", HTTP_GET, handleScript);
+  //httpServer.on("/style.css", HTTP_GET, handleStyle);
   //httpServer.on("/favicon.ico", HTTP_GET, handleFavicon);
+
+  httpServer.on("/upload", HTTP_GET, handleUpload);
   httpServer.on("/submit", HTTP_POST, handleSubmit);
   httpServer.on("/api_config", HTTP_GET, handleApiConfig);
   httpServer.on("/api_controls", HTTP_GET, handleApiControls);
   httpServer.on("/api_command", HTTP_POST, handleApiCommand);
-  httpServer.on("/upload", HTTP_GET, handleUpload);
   httpServer.on("/update", HTTP_POST, handleUpdate, handleFileUpload);
   httpServer.on("/reboot", HTTP_GET, handleReboot, handleFileUpload);
   httpServer.on("/fs", HTTP_GET, handleFS);
@@ -21,21 +25,21 @@ void httpServer_SetupHandlers() {
   httpServer.onNotFound(handleRedirect);
 }
 
-void handleSetup(AsyncWebServerRequest *request) {
-  //debug(" - handleSetup \n");
-  if (!(!config.current["locallogin"].length() || !config.current["localpassword"].length() || request->authenticate(config.current["locallogin"].c_str(), config.current["localpassword"].c_str()))) return request->requestAuthentication();
-  request->send_P(200, "text/html", setup_html);
-}
+//void handleSetup(AsyncWebServerRequest *request) {
+//  debug(" - handleSetup \n");
+//  if (!(!config.current["locallogin"].length() || !config.current["localpassword"].length() || request->authenticate(config.current["locallogin"].c_str(), config.current["localpassword"].c_str()))) return request->requestAuthentication();
+//  request->send_P(200, "text/html", setup_html);
+//}
 
-void handleScript(AsyncWebServerRequest* request) {
-  //debug(" - handleScript \n");
-  request->send_P(200, "text/javascript", script_js);
-}
+//void handleScript(AsyncWebServerRequest* request) {
+//  debug(" - handleScript \n");
+//  request->send_P(200, "text/javascript", script_js);
+//}
 
-void handleStyle(AsyncWebServerRequest *request) {
-  //debug(" - handleStyle \n");
-  request->send_P(200, "text/css", style_html);
-}
+//void handleStyle(AsyncWebServerRequest *request) {
+//  debug(" - handleStyle \n");
+//  request->send_P(200, "text/css", style_html);
+//}
 
 //void handleFavicon(AsyncWebServerRequest* request) {
 //  //debug(" - handleFavicon \n");
@@ -63,7 +67,7 @@ void handleSubmit(AsyncWebServerRequest *request) {
 }
 
 void handleApiConfig(AsyncWebServerRequest *request) {
-  //debug(" - handleApiConfig \n");
+  debug(" - handleApiConfig \n");
   if (!(!config.current["locallogin"].length() || !config.current["localpassword"].length() || request->authenticate(config.current["locallogin"].c_str(), config.current["localpassword"].c_str()))) return request->requestAuthentication();
   AsyncResponseStream *response = request->beginResponseStream("application/json");
 
@@ -109,7 +113,7 @@ print:
 }
 
 void handleApiControls(AsyncWebServerRequest* request) {
-  //debug(" - handleApiControls \n");
+  debug(" - handleApiControls \n");
   if (!(!config.current["locallogin"].length() || !config.current["localpassword"].length() || request->authenticate(config.current["locallogin"].c_str(), config.current["localpassword"].c_str()))) return request->requestAuthentication();
 
   String controls;
@@ -121,7 +125,7 @@ void handleApiControls(AsyncWebServerRequest* request) {
 }
 
 void handleApiCommand(AsyncWebServerRequest* request) {
-  //debug(" - handleApiCommand \n");
+  debug(" - handleApiCommand \n");
   if (!(!config.current["locallogin"].length() || !config.current["localpassword"].length() || request->authenticate(config.current["locallogin"].c_str(), config.current["localpassword"].c_str()))) return request->requestAuthentication();
 
   if (request->hasParam("state", true) && request->hasParam("id", true)) {
@@ -142,7 +146,7 @@ void handleApiCommand(AsyncWebServerRequest* request) {
 }
 
 void handleUpload(AsyncWebServerRequest *request) {
-  //debug(" - handleUpload \n");
+  debug(" - handleUpload \n");
   if (!(!config.current["locallogin"].length() || !config.current["localpassword"].length() || request->authenticate(config.current["locallogin"].c_str(), config.current["localpassword"].c_str()))) return request->requestAuthentication();
   request->send_P(200, "text/html", upload_html);
 }
@@ -152,7 +156,7 @@ void handleReboot(AsyncWebServerRequest* request) {
   if (!(!config.current["locallogin"].length() || !config.current["localpassword"].length() || request->authenticate(config.current["locallogin"].c_str(), config.current["localpassword"].c_str()))) return request->requestAuthentication();
   debug(" - reboot command recieved \n");
   need_reboot = true;
-  request->send_P(200, "text/html", reboot_html);
+  request->send_P(200, "text/html", "Rebooting...");
 }
 
 void handleUpdate(AsyncWebServerRequest *request) {
@@ -164,7 +168,7 @@ void handleUpdate(AsyncWebServerRequest *request) {
   }
 
   need_reboot = !update_spiffs && !Update.hasError();
-  request->send_P(200, "text/html", Update.hasError() ? updatefailure_html : updatesuccess_html);
+  request->send_P(200, "text/html", Update.hasError() ? "Update failed." : "Update completed successfully.");
 }
 
 void handleFileUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) {
@@ -254,7 +258,7 @@ void handleRedirect(AsyncWebServerRequest *request) {
   bool sta_ip = (request->host() == WiFi.localIP().toString());
   debug("HTTP-Server: request redirected from: %s \n", request->url().c_str());
   AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "");
-  response->addHeader("Location", String("http://") + (sta_ip ? WiFi.localIP().toString() : WiFi.softAPIP().toString()) + String("/setup"));
+  response->addHeader("Location", String("http://") + (sta_ip ? WiFi.localIP().toString() : WiFi.softAPIP().toString()));
   request->send(response);
 }
 

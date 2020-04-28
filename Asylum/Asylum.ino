@@ -1,16 +1,15 @@
 
-#include "Button.h"
-#include "Device.h"
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <AsyncMqttClient.h>
 #include <DNSServer.h>
-#include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <Hash.h>
 
-#include "Debug.h"
+#include "Button.h"
 #include "Config.h"
+#include "Debug.h"
 #include "Device.h"
 
 #include "src/Strip.h"
@@ -43,6 +42,7 @@
 
 String id;
 String id_macsuffix;
+String mac;
 String mqtt_global_topic_status;
 String mqtt_global_topic_setup;
 String mqtt_global_topic_reboot;
@@ -60,7 +60,7 @@ byte connect_attempts = 0;      // contains connection attempts, increases when 
 
 DNSServer       dnsServer;
 WiFiClient      wifiClient;
-PubSubClient    mqttClient(wifiClient);
+AsyncMqttClient mqttClient;
 AsyncWebServer  httpServer(PORT_HTTP);
 
 IPAddress       wifi_AP_IP(192, 168, 4, 1);
@@ -121,9 +121,10 @@ void setup() {
 
   // Initialize chip
   debug("\n\n\n");
-  uint8_t mac[6]; WiFi.macAddress(mac);
-  for (int i = sizeof(mac) - 2; i < sizeof(mac); ++i) id_macsuffix += String(mac[i], HEX);
-  
+  uint8_t macarr[6]; WiFi.macAddress(macarr);
+  for (int i = sizeof(macarr) - 2; i < sizeof(macarr); ++i) id_macsuffix += String(macarr[i], HEX);
+  for (int i = 0; i < sizeof(macarr); ++i) mac += String(macarr[i], HEX);
+
   id = devices.size() == 1 ? devices[0]->uid_prefix + "-" + id_macsuffix : "ESP-" + id_macsuffix;
   mqtt_global_topic_status = id + "/status";
   mqtt_global_topic_setup = id + "/setup";
@@ -142,6 +143,13 @@ void setup() {
   stationModeConnectedHandler = WiFi.onStationModeConnected(&WiFi_onStationModeConnected);
   stationModeGotIPHandler = WiFi.onStationModeGotIP(&WiFi_onStationModeGotIP);
   stationModeDisconnectedHandler = WiFi.onStationModeDisconnected(&WiFi_onStationModeDisconnected);
+
+  mqttClient.onConnect(Mqtt_onConnect);
+  mqttClient.onDisconnect(Mqtt_onDisconnect);
+  //mqttClient.onSubscribe(Mqtt_onSubscribe);
+  //mqttClient.onUnsubscribe(Mqtt_onUnsubscribe);
+  mqttClient.onMessage(Mqtt_onMessage);
+  //mqttClient.onPublish(Mqtt_onPublish);
 
   // Initialize config
   debug("Mounting SPIFFS ... ");
@@ -205,9 +213,6 @@ void loop() {
 
   // LOOP IN AP or AP+STA MODE
   if (APEnabled && dnsserver_ready) dnsServer.processNextRequest();
-
-  // LOOP IN CLIENT MQTT MODE
-  if (STAEnabled && WiFi.isConnected() && config_ready && configmode == 2 && !mqttClient.loop() && !mqttClient.connected()) mqttClient_connect();
 
   if (config_ready) { // Config is valid
     if (configmode == 0) { // Local mode
@@ -353,65 +358,7 @@ void WiFi_onStationModeConnected(const WiFiEventStationModeConnected& evt) {
 void WiFi_onStationModeGotIP(const WiFiEventStationModeGotIP& evt) {
   debug("Got client IP address: %s \n", evt.ip.toString().c_str());
 
-  if (config_ready && config.current["mode"].toInt() == 2) {
-    debug("Configuring MQTT-client ... ");
-    mqttClient.setServer(config.current["mqttserver"].c_str(), 1883);
-    mqttClient.setCallback(mqtt_callback);
-    debug("configured \n");
-  }
-}
-
-void mqttClient_connect() {
-  if (mqttClient.connected()) return;
-  
-  uint8_t mac_int[6];
-  WiFi.macAddress(mac_int);
-  String mac_str = "";
-  for (int i = 0; i < sizeof(mac_int); ++i) {
-    mac_str += String(mac_int[i], HEX);
-  }
-
-  char willmessage[MQTT_MAX_PACKET_SIZE];
-  snprintf(willmessage, sizeof(willmessage), "{\"mac\":\"%s\",\"status\":\"disconnected\",\"desc\":\"%s\"}", mac_str.c_str(), config.current["description"].c_str());
-
-  debug("Connecting to MQTT server with Will message: %s as %s , auth %s : %s ... ", config.current["mqttserver"].c_str(), id.c_str(), config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str());
-	bool connected = mqttClient.connect(id.c_str(), config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str(), mqtt_global_topic_status.c_str(), 0, true, willmessage, true);
-	if (!connected) {
-		debug("failed, state = %i \n", mqttClient.state());
-		debug("Connecting to MQTT server: %s as %s , auth %s : %s ... ", config.current["mqttserver"].c_str(), id.c_str(), config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str());
-		connected = mqttClient.connect(id.c_str(), config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str());
-	}
-	if (connected) {
-    debug("connected, state = %i \n", mqttClient.state());
-
-    mqttClient.subscribe(mqtt_global_topic_setup.c_str());
-    mqttClient.subscribe(mqtt_global_topic_reboot.c_str());
-
-    for (auto& d : devices) {
-      d->subscribe();
-    }
-
-    char payload[MQTT_MAX_PACKET_SIZE];
-    snprintf(payload, sizeof(payload), "{\"mac\":\"%s\",\"ip\":\"%s\",\"status\":\"connected\",\"desc\":\"%s\"}", mac_str.c_str(), WiFi.localIP().toString().c_str(), config.current["description"].c_str());
-    mqttClient.publish(mqtt_global_topic_status.c_str(), payload, true);
-
-    debug(" - message sent [%s] %s \n", mqtt_global_topic_status.c_str(), payload);
-  }
-  else
-  {
-    debug("failed, state = %i \n", mqttClient.state());
-  }
-
-  // -4 : MQTT_CONNECTION_TIMEOUT - the server didn't respond within the keepalive time
-  // -3 : MQTT_CONNECTION_LOST - the network connection was broken
-  // -2 : MQTT_CONNECT_FAILED - the network connection failed
-  // -1 : MQTT_DISCONNECTED - the client is disconnected cleanly
-  //  0 : MQTT_CONNECTED - the client is connected
-  //  1 : MQTT_CONNECT_BAD_PROTOCOL - the server doesn't support the requested version of MQTT
-  //  2 : MQTT_CONNECT_BAD_CLIENT_ID - the server rejected the client identifier
-  //  3 : MQTT_CONNECT_UNAVAILABLE - the server was unable to accept the connection
-  //  4 : MQTT_CONNECT_BAD_CREDENTIALS - the username / password were rejected
-  //  5 : MQTT_CONNECT_UNAUTHORIZED - the client was not authorized to connect
+  if (config_ready && config.current["mode"].toInt() == 2) mqttClient_connect();
 }
 
 void WiFi_onStationModeDisconnected(const WiFiEventStationModeDisconnected& evt) {
@@ -421,10 +368,48 @@ void WiFi_onStationModeDisconnected(const WiFiEventStationModeDisconnected& evt)
   if (config_ready && config.current["mode"].toInt() == 2) mqttClient.disconnect();
 }
 
-void mqtt_callback(char* tp, byte* pl, unsigned int length) {
-  pl[length] = '\0';
-  String payload = String((char*)pl);
+void mqttClient_connect() {
+  if (mqttClient.connected()) return;
+
+  static char willmessage[MQTT_MAX_PACKET_SIZE];
+  snprintf(willmessage, sizeof(willmessage), "{\"mac\":\"%s\",\"status\":\"off\",\"desc\":\"%s\"}", mac.c_str(), config.current["description"].c_str());
+ 
+  debug("Configuring MQTT-client ... ");
+  mqttClient.setServer(config.current["mqttserver"].c_str(), 1883);
+  mqttClient.setCredentials(config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str());
+  mqttClient.setClientId(id.c_str());
+  mqttClient.setWill(mqtt_global_topic_status.c_str(), 1, true, willmessage);
+  debug("configured \n");
+
+  debug("Connecting to MQTT server: %s as %s , auth %s : %s \n", config.current["mqttserver"].c_str(), id.c_str(), config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str());
+  mqttClient.connect();
+}
+
+void Mqtt_onConnect(bool sessionPresent) {
+  debug("Connected to MQTT \n");
+
+  mqttClient.subscribe(mqtt_global_topic_setup.c_str(), 0);
+  mqttClient.subscribe(mqtt_global_topic_reboot.c_str(), 0);
+
+  for (auto& d : devices) {
+    d->subscribe();
+  }
+
+  char payload[MQTT_MAX_PACKET_SIZE];
+  snprintf(payload, sizeof(payload), "{\"mac\":\"%s\",\"ip\":\"%s\",\"status\":\"on\",\"desc\":\"%s\"}", mac.c_str(), WiFi.localIP().toString().c_str(), config.current["description"].c_str());
+  mqttClient.publish(mqtt_global_topic_status.c_str(), 1, true, payload);
+}
+
+void Mqtt_onDisconnect(AsyncMqttClientDisconnectReason reason) {
+  debug("Disconnected from MQTT, reason: %u \n", reason);
+  
+  if (WiFi.isConnected() && config_ready && config.current["mode"].toInt() == 2) mqttClient_connect();
+}
+
+void Mqtt_onMessage(char* tp, char* pl, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
+  pl[len] = '\0';
   String topic = String(tp);
+  String payload = String(pl);
 
   debug(" - message recieved [%s]: %s \n", topic.c_str(), payload.c_str());
   
@@ -442,6 +427,7 @@ void mqtt_callback(char* tp, byte* pl, unsigned int length) {
     d->handlePayload(topic, payload);
   }
 }
+
 
 void blynk(bool setup) {
 

@@ -28,7 +28,7 @@ class Strip : public Device
 public:
   Strip(String prefix, byte strip_pin);
 
-  void initialize(PubSubClient* ptr_mqttClient, Config* ptr_config);
+  void initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config);
 
   void update();
 

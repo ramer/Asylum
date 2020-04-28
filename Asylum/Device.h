@@ -4,7 +4,7 @@
 #define _DEVICE_h
 
 #include <ESP8266WiFi.h>
-#include <PubSubClient.h>
+#include <AsyncMqttClient.h>
 #include "Config.h"
 #include "Button.h"
 
@@ -18,7 +18,7 @@ public:
   Device(String prefix);
   virtual ~Device();
 
-  virtual void initialize(PubSubClient* ptr_mqttClient, Config* ptr_config);
+  virtual void initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config);
 
   virtual void update();
   virtual void updateState(ulong state_new);
@@ -56,7 +56,7 @@ protected:
 
   //std::function<void(ulong)> updateStateCallback;
 
-  PubSubClient* _mqttClient;
+  AsyncMqttClient* _mqttClient;
   Config* _config;
 
   bool  state_published = false;

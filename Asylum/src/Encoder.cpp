@@ -20,7 +20,7 @@ Encoder::Encoder(String prefix, byte action, byte eventA, byte eventB) : Device(
     </div>)~";
 };
 
-void Encoder::initialize(PubSubClient* ptr_mqttClient, Config* ptr_config) {
+void Encoder::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config) {
   _mqttClient = ptr_mqttClient;
   _config = ptr_config;
 

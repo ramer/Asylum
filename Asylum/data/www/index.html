@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройка устройства</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script type="text/javascript" src="script.js"></script>
+</head>
+<body>
+    <div class="wrapper_full">
+        <header>
+            <h1 id="uid"></h1>
+        </header>
+        <div id="loading-placeholer">Загрузка...</div>
+        <form id="mainForm" style="display: none;" action="/submit" method="POST" onsubmit="submitForm(this);">
+            <div class="field-group"><a class="upload" href="/upload">Обновление ПО</a></div>
+            <h3>Управление</h3>
+            <div class="field-group" id="controlpanel">
+
+            </div>
+            <div class="field-group">
+                <label for="description" class="label">Описание:</label>
+                <div class="field">
+                    <input id="description" type="text" name="description" maxlength="128" placeholder="Люстра в гостиной" maxlength="64" autofocus />
+                </div>
+            </div>
+            <div class="field-group">
+                <div class="label">Режим работы устройства:</div>
+                <div class="field" onchange="changeMode(event);">
+                    <div>
+                        <label>
+                            <input id="mode0" name="mode" type="radio" value="0" checked="checked" />Автономно
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            <input id="mode1" name="mode" type="radio" value="1" />В локальной сети
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            <input id="mode2" name="mode" type="radio" value="2" />С сервером MQTT
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <h3>Беспроводная сеть</h3>
+            <div class="field-group">
+                <label for="apssid" class="label">SSID точки доступа:</label>
+                <div class="field">
+                    <div class="field_absolute_wrapper">
+                        <select class="field_absolute_back" id="networks" onchange="document.getElementById('apssid').value=this.options[this.selectedIndex].value;" disabled="true">
+                            <option></option>
+                        </select>
+                        <input class="field_absolute_front" id="apssid" type="text" name="apssid" maxlength="32" placeholder="Мой Wi-Fi" value="" onfocus="this.select()" disabled="true" />
+                    </div>
+                </div>
+            </div>
+            <div class="field-group">
+                <label for="apkey" class="label">Пароль:</label>
+                <div class="field">
+                    <input id="apkey" type="password" name="apkey" maxlength="32" value="" />
+                </div>
+            </div>
+            <h3>Авторизация на устройстве</h3>
+            <div class="field-group">
+                <label for="locallogin" class="label">Имя пользователя:</label>
+                <div class="field">
+                    <input id="locallogin" type="text" name="locallogin" maxlength="32" placeholder="admin" value="" />
+                </div>
+            </div>
+            <div class="field-group">
+                <label for="localpassword" class="label">Пароль:</label>
+                <div class="field">
+                    <input id="localpassword" type="password" name="localpassword" maxlength="32" value="" />
+                </div>
+            </div>
+            <h3>MQTT-сервер</h3>
+            <div class="field-group">
+                <label for="mqttserver" class="label">Адрес сервера:</label>
+                <div class="field">
+                    <input id="mqttserver" type="text" name="mqttserver" maxlength="64" placeholder="192.168.1.123" value="" disabled="true" required />
+                </div>
+            </div>
+            <div class="field-group">
+                <label for="mqttlogin" class="label">Имя пользователя:</label>
+                <div class="field">
+                    <input id="mqttlogin" type="text" name="mqttlogin" maxlength="32" placeholder="vasya" value="" disabled="true" />
+                </div>
+            </div>
+            <div class="field-group">
+                <label for="mqttpassword" class="label">Пароль:</label>
+                <div class="field">
+                    <input id="mqttpassword" type="password" name="mqttpassword" maxlength="32" disabled="true" />
+                </div>
+            </div>
+            <h3>Дополнительные параметры</h3>
+            <div class="field-group">
+                <div class="label">Состояние при включении устройства:</div>
+                <div class="field">
+                    <div>
+                        <label>
+                            <input id="onboot0" name="onboot" type="radio" value="0" checked="checked" />Выключено
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            <input id="onboot1" name="onboot" type="radio" value="1" />Включено
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            <input id="onboot2" name="onboot" type="radio" value="2" />Последнее состояние
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            <input id="onboot3" name="onboot" type="radio" value="3" />Инвертированное состояние
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="field-group">
+                <div class="label">Световой индикатор:</div>
+                <div class="field">
+                    <div>
+                        <label>
+                            <input id="onboardled0" name="onboardled" type="radio" value="0" checked="checked" />Выключен
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            <input id="onboardled1" name="onboardled" type="radio" value="1" />Включен
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="field-group">
+                <label for="extension1" class="label">Параметр 1:</label>
+                <div class="field">
+                    <div class="first">
+                        <input id="extension1" type="text" name="extension1" maxlength="32" value="" />
+                    </div>
+                </div>
+            </div>
+            <div class="field-group">
+                <label for="extension2" class="label">Параметр 2:</label>
+                <div class="field">
+                    <div class="first">
+                        <input id="extension2" type="text" name="extension2" maxlength="32" value="" />
+                    </div>
+                </div>
+            </div>
+            <div class="field-group">
+                <label for="extension3" class="label">Параметр 3:</label>
+                <div class="field">
+                    <div class="first">
+                        <input id="extension3" type="text" name="extension3" maxlength="32" value="" />
+                    </div>
+                </div>
+            </div>
+            <div class="field-group">
+                <div class="label"></div>
+                <div class="field">
+                    <input id="saveForm" type="submit" name="saveForm" value="Сохранить и применить">
+                </div>
+            </div>
+
+        </form>
+    </div>
+    <script>
+        // IE 9- polyfill
+        (function () {
+            setTimeout(function (arg1) {
+                if (arg1 === 'test') {
+                    // feature test is passed, no need for polyfill
+                    return;
+                }
+                var __nativeST__ = window.setTimeout;
+                window.setTimeout = function (vCallback, nDelay /*, argumentToPass1, argumentToPass2, etc. */) {
+                    var aArgs = Array.prototype.slice.call(arguments, 2);
+                    return __nativeST__(vCallback instanceof Function ? function () {
+                        vCallback.apply(null, aArgs);
+                    } : vCallback, nDelay);
+                };
+            }, 0, 'test');
+
+            var interval = setInterval(function (arg1) {
+                clearInterval(interval);
+                if (arg1 === 'test') {
+                    // feature test is passed, no need for polyfill
+                    return;
+                }
+                var __nativeSI__ = window.setInterval;
+                window.setInterval = function (vCallback, nDelay /*, argumentToPass1, argumentToPass2, etc. */) {
+                    var aArgs = Array.prototype.slice.call(arguments, 2);
+                    return __nativeSI__(vCallback instanceof Function ? function () {
+                        vCallback.apply(null, aArgs);
+                    } : vCallback, nDelay);
+                };
+            }, 0, 'test');
+        }())
+    </script>
+    <script>
+
+    </script>
+</body>
+
+</html>

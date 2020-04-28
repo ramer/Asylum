@@ -18,6 +18,9 @@
     <None Include="Asylum.ino" />
     <None Include="html.ino" />
     <None Include="http.ino" />
+    <None Include="data\www\index.html" />
+    <None Include="data\www\script.js" />
+    <None Include="data\www\style.css" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.Asylum.vsarduino.h">
@@ -64,5 +67,10 @@
     <ClCompile Include="src\Strip.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="data\www\favicon.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

@@ -12,7 +12,7 @@ class Socket : public Device
 public:
   Socket(String prefix, byte event, byte action);
 
-  void initialize(PubSubClient* ptr_mqttClient, Config* ptr_config);
+  void initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config);
 
 protected:
 };
