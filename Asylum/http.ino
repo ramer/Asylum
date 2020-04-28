@@ -182,7 +182,7 @@ void handleFileUpload(AsyncWebServerRequest *request, const String& filename, si
 
     if (update_spiffs) {
       size_t spiffsSize = ((size_t)&_SPIFFS_end - (size_t)&_SPIFFS_start);
-      if (Update.begin(spiffsSize, U_SPIFFS)) {
+      if (Update.begin(spiffsSize, U_FS)) {
         debug("Updating SPIFFS ... ");
       }
       else {
