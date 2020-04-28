@@ -1,4 +1,3 @@
-
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
@@ -19,8 +18,8 @@
 
 // GLOBAL FIRMWARE CONFIGURATION
 
-#define DEVICE_TYPE_SOCKET
-//#define DEVICE_TYPE_TOUCHT1
+//#define DEVICE_TYPE_SOCKET
+#define DEVICE_TYPE_TOUCHT1
 
 //#define DEVICE_TYPE_MOTOR
 //#define DEVICE_TYPE_STRIP
@@ -79,7 +78,6 @@ ulong time_status_led;
 bool  state_status_led;
 
 void setup() {
-	//delay(5000);
   Serial.begin(74880);
 #ifdef DEBUG_CORE
   Serial.setDebugOutput(true);
@@ -371,7 +369,7 @@ void WiFi_onStationModeDisconnected(const WiFiEventStationModeDisconnected& evt)
 void mqttClient_connect() {
   if (mqttClient.connected()) return;
 
-  static char willmessage[MQTT_MAX_PACKET_SIZE];
+  static char willmessage[128];
   snprintf(willmessage, sizeof(willmessage), "{\"mac\":\"%s\",\"status\":\"off\",\"desc\":\"%s\"}", mac.c_str(), config.current["description"].c_str());
  
   debug("Configuring MQTT-client ... ");
@@ -395,7 +393,7 @@ void Mqtt_onConnect(bool sessionPresent) {
     d->subscribe();
   }
 
-  char payload[MQTT_MAX_PACKET_SIZE];
+  char payload[128];
   snprintf(payload, sizeof(payload), "{\"mac\":\"%s\",\"ip\":\"%s\",\"status\":\"on\",\"desc\":\"%s\"}", mac.c_str(), WiFi.localIP().toString().c_str(), config.current["description"].c_str());
   mqttClient.publish(mqtt_global_topic_status.c_str(), 1, true, payload);
 }

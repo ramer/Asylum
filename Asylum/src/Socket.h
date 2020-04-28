@@ -4,7 +4,7 @@
 #define _SOCKET_h
 
 #include <ESP8266WiFi.h>
-#include <PubSubClient.h>
+#include <AsyncMqttClient.h>
 #include "../Device.h"
 
 class Socket : public Device
