@@ -6,7 +6,7 @@
 #define _ENCODER_h
 
 #include <ESP8266WiFi.h>
-#include <PubSubClient.h>
+#include <AsyncMqttClient.h>
 #include "../Device.h"
 
 #define ENCODER_STEP  1

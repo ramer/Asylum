@@ -14,12 +14,17 @@
 #include "src/Strip.h"
 #include "src/Encoder.h"
 #include "src/Socket.h"
+#include "src/AnalogSensor.h"
+#include "src/HLW8012.h"
 
 
 // GLOBAL FIRMWARE CONFIGURATION
 
-//#define DEVICE_TYPE_SOCKET
-#define DEVICE_TYPE_TOUCHT1
+//#define DEVICE_TYPE_SONOFF_TH     // TH10 / TH16
+//#define DEVICE_TYPE_SONOFF_BASIC
+#define DEVICE_TYPE_SONOFF_POW
+//#define DEVICE_TYPE_SONOFF_TOUCH  // T1 / T2 / T3
+//#define DEVICE_TYPE_SONOFF_S20
 
 //#define DEVICE_TYPE_MOTOR
 //#define DEVICE_TYPE_STRIP
@@ -34,8 +39,10 @@
 //#define DEBUG_CORE
 
 #define WIFI_POWER              20.5
+
 #define PORT_DNS                53
 #define PORT_HTTP               80
+
 #define INTERVAL_STATUS_LED     500
 #define INTERVAL_STA_RECONNECT  30000
 
@@ -83,15 +90,29 @@ void setup() {
   Serial.setDebugOutput(true);
 #endif
 
-#if (defined DEVICE_TYPE_SOCKET)
-#define STATUS_LED 13                                  //inverted
-	devices.push_back(new Socket("Socket1", 0, 12));     // event, action
+#if (defined DEVICE_TYPE_SONOFF_TH)
+#define STATUS_LED 13                                  // inverted
+  devices.push_back(new Socket("TH", 0, 12));          // event, action
 #endif
-#if (defined DEVICE_TYPE_TOUCHT1)
-#define STATUS_LED 13                                  //inverted
-  devices.push_back(new Socket("TouchT1-1", 0, 12));   // event, action
-  devices.push_back(new Socket("TouchT1-2", 9, 5));    // event, action
-  //devices.push_back(new Socket("TouchT1-3", 10, 4)); // event, action
+#if (defined DEVICE_TYPE_SONOFF_BASIC)
+#define STATUS_LED 13                                  // inverted
+  devices.push_back(new Socket("Basic", 0, 12));       // event, action
+#endif
+#if (defined DEVICE_TYPE_SONOFF_POW)
+#define STATUS_LED 15
+#define STATUS_LED_NOTINVERTED
+  devices.push_back(new Socket("Pow", 0, 12));                    // event, action
+  devices.push_back(new HLW8012("Pow-Sensor", 14, 13, 5, 5000));  // power, voltage/current, switch, interval
+#endif
+#if (defined DEVICE_TYPE_SONOFF_TOUCH)
+#define STATUS_LED 13                                  // inverted
+  devices.push_back(new Socket("Touch-1", 0, 12));     // event, action
+  devices.push_back(new Socket("Touch-2", 9, 5));      // event, action
+  //devices.push_back(new Socket("Touch-3", 10, 4));   // event, action
+#endif
+#if (defined DEVICE_TYPE_SONOFF_S20)
+#define STATUS_LED 13                                  // inverted
+  devices.push_back(new Socket("S20", 0, 12));         // event, action
 #endif
 
 // IMPORTANT: use Generic ESP8266 Module
@@ -394,7 +415,7 @@ void Mqtt_onConnect(bool sessionPresent) {
   }
 
   char payload[128];
-  snprintf(payload, sizeof(payload), "{\"mac\":\"%s\",\"ip\":\"%s\",\"status\":\"on\",\"desc\":\"%s\"}", mac.c_str(), WiFi.localIP().toString().c_str(), config.current["description"].c_str());
+  snprintf(payload, sizeof(payload), "{\"mac\":\"%s\",\"ip\":\"%s\",\"rssi\":\"%i\",\"status\":\"on\",\"desc\":\"%s\"}", mac.c_str(), WiFi.localIP().toString().c_str(), WiFi.RSSI(), config.current["description"].c_str());
   mqttClient.publish(mqtt_global_topic_status.c_str(), 1, true, payload);
 }
 
@@ -437,11 +458,19 @@ void blynk(bool setup) {
     if (millis() - time_status_led > INTERVAL_STATUS_LED) {
       time_status_led = millis();
       state_status_led = !state_status_led;
+#ifdef STATUS_LED_NOTINVERTED
+      digitalWrite(STATUS_LED, state_status_led);
+#else
       digitalWrite(STATUS_LED, !state_status_led); // LED circuit inverted
+#endif
     }
   }
   else {
+#ifdef STATUS_LED_NOTINVERTED
+    digitalWrite(STATUS_LED, (config.current["onboardled"].toInt() == 0 ? LOW : HIGH));
+#else
     digitalWrite(STATUS_LED, (config.current["onboardled"].toInt() == 0 ? HIGH : LOW)); // LED circuit inverted
+#endif
   }
 
 #endif

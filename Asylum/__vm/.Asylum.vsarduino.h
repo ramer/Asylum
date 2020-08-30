@@ -18,7 +18,7 @@
 #define __ets__
 #define ICACHE_FLASH
 #define BEARSSL_SSL_BASIC
-#define NONOSDK22x_191105 1
+#define NONOSDK22x_190703 1
 #define F_CPU 80000000L
 #define LWIP_OPEN_SRC
 #define TCP_MSS 536
@@ -27,7 +27,7 @@
 #define ARDUINO 108012
 #define ARDUINO_ESP8266_GENERIC
 #define ARDUINO_ARCH_ESP8266
-#define LED_BUILTIN 2
+#define LED_BUILTIN 0
 #define FLASHMODE_QIO
 #define ESP8266
 #define __cplusplus 201103L

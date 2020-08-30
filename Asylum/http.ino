@@ -167,6 +167,8 @@ void handleUpdate(AsyncWebServerRequest *request) {
     update_spiffs = (request->getParam("spiffs", true)->value() == "1");
   }
 
+  if (update_spiffs && !Update.hasError()) config.saveConfig();
+
   need_reboot = !update_spiffs && !Update.hasError();
   request->send_P(200, "text/html", Update.hasError() ? "Update failed." : "Update completed successfully.");
 }
