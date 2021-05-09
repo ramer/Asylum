@@ -16,13 +16,15 @@
 #include "src/Socket.h"
 #include "src/AnalogSensor.h"
 #include "src/HLW8012.h"
+#include "src/CSE7766.h"
 
 
 // GLOBAL FIRMWARE CONFIGURATION
 
 //#define DEVICE_TYPE_SONOFF_TH     // TH10 / TH16
 //#define DEVICE_TYPE_SONOFF_BASIC
-#define DEVICE_TYPE_SONOFF_POW
+//#define DEVICE_TYPE_SONOFF_POW
+#define DEVICE_TYPE_SONOFF_POWR2
 //#define DEVICE_TYPE_SONOFF_TOUCH  // T1 / T2 / T3
 //#define DEVICE_TYPE_SONOFF_S20
 
@@ -36,6 +38,7 @@
 
 // DEFINES
 
+//#define DEBUG
 //#define DEBUG_CORE
 
 #define WIFI_POWER              20.5
@@ -85,7 +88,9 @@ ulong time_status_led;
 bool  state_status_led;
 
 void setup() {
+#ifdef DEBUG
   Serial.begin(74880);
+#endif
 #ifdef DEBUG_CORE
   Serial.setDebugOutput(true);
 #endif
@@ -103,6 +108,12 @@ void setup() {
 #define STATUS_LED_NOTINVERTED
   devices.push_back(new Socket("Pow", 0, 12));                    // event, action
   devices.push_back(new HLW8012("Pow-Sensor", 14, 13, 5, 5000));  // power, voltage/current, switch, interval
+#endif
+#if (defined DEVICE_TYPE_SONOFF_POWR2)
+#define STATUS_LED 13
+#define STATUS_LED_NOTINVERTED
+  devices.push_back(new Socket("Pow", 0, 12));         // event, action
+  devices.push_back(new CSE7766("Pow-Sensor", 5000));  // power, interval
 #endif
 #if (defined DEVICE_TYPE_SONOFF_TOUCH)
 #define STATUS_LED 13                                  // inverted

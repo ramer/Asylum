@@ -53,6 +53,9 @@
     <ClInclude Include="src\HLW8012.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\CSE7766.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config.cpp">
@@ -77,6 +80,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\HLW8012.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CSE7766.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
