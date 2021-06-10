@@ -111,7 +111,6 @@ void setup() {
 #endif
 #if (defined DEVICE_TYPE_SONOFF_POWR2)
 #define STATUS_LED 13
-#define STATUS_LED_NOTINVERTED
   devices.push_back(new Socket("Pow", 0, 12));         // event, action
   devices.push_back(new CSE7766("Pow-Sensor", 5000));  // power, interval
 #endif
