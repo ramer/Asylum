@@ -17,14 +17,14 @@
 #include "src/AnalogSensor.h"
 #include "src/HLW8012.h"
 #include "src/CSE7766.h"
-
+#include "src/BME280Sensor.h"
 
 // GLOBAL FIRMWARE CONFIGURATION
 
 //#define DEVICE_TYPE_SONOFF_TH     // TH10 / TH16
 //#define DEVICE_TYPE_SONOFF_BASIC
 //#define DEVICE_TYPE_SONOFF_POW
-#define DEVICE_TYPE_SONOFF_POWR2
+//#define DEVICE_TYPE_SONOFF_POWR2
 //#define DEVICE_TYPE_SONOFF_TOUCH  // T1 / T2 / T3
 //#define DEVICE_TYPE_SONOFF_S20
 
@@ -34,7 +34,13 @@
 //#define DEVICE_TYPE_DISPLAY_32x8
 
 //#define DEVICE_TYPE_ANALOGSENSOR
+#define DEVICE_TYPE_BME280Sensor
 
+// ADDITIONAL INCLUDES
+#if (defined DEVICE_TYPE_BME280Sensor)
+#include <BME280I2C.h>
+#include <Wire.h>
+#endif
 
 // DEFINES
 
@@ -112,13 +118,13 @@ void setup() {
 #if (defined DEVICE_TYPE_SONOFF_POWR2)
 #define STATUS_LED 13
   devices.push_back(new Socket("Pow", 0, 12));         // event, action
-  devices.push_back(new CSE7766("Pow-Sensor", 5000));  // power, interval
+  devices.push_back(new CSE7766("Pow-Sensor", 5000));  // interval
 #endif
 #if (defined DEVICE_TYPE_SONOFF_TOUCH)
 #define STATUS_LED 13                                  // inverted
   devices.push_back(new Socket("Touch-1", 0, 12));     // event, action
-  devices.push_back(new Socket("Touch-2", 9, 5));      // event, action
-  //devices.push_back(new Socket("Touch-3", 10, 4));   // event, action
+  //devices.push_back(new Socket("Touch-2", 9, 5));      // event, action
+  //devices.push_back(new Socket("Touch-3", 10, 4));     // event, action
 #endif
 #if (defined DEVICE_TYPE_SONOFF_S20)
 #define STATUS_LED 13                                  // inverted
@@ -147,6 +153,10 @@ void setup() {
 #define PIN_LED   A2                                    // inverted
   devices.push_back(new AnalogSensor("AnalogSensor", A5, A2, A6));      // event, action, sensor
 #endif 
+#if (defined DEVICE_TYPE_BME280Sensor                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
+  #define STATUS_LED 1                                  // TX pin
+  devices.push_back(new BME280Sensor("Climate", 5000)); // interval
+#endif
 
   // Initialize chip
   debug("\n\n\n");
