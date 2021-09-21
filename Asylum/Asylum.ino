@@ -6,6 +6,9 @@
 #include <ArduinoJson.h>
 #include <Hash.h>
 
+#include <SPI.h>
+#include <Wire.h>
+
 #include "Button.h"
 #include "Config.h"
 #include "Debug.h"
@@ -17,7 +20,6 @@
 #include "src/AnalogSensor.h"
 #include "src/HLW8012.h"
 #include "src/CSE7766.h"
-#include "src/BME280Sensor.h"
 
 // GLOBAL FIRMWARE CONFIGURATION
 
@@ -34,12 +36,16 @@
 //#define DEVICE_TYPE_DISPLAY_32x8
 
 //#define DEVICE_TYPE_ANALOGSENSOR
-#define DEVICE_TYPE_BME280Sensor
+//#define DEVICE_TYPE_BME280SENSOR
+#define DEVICE_TYPE_SHT31SENSOR
 
 // ADDITIONAL INCLUDES
-#if (defined DEVICE_TYPE_BME280Sensor)
+#if (defined DEVICE_TYPE_BME280SENSOR)
 #include <BME280I2C.h>
-#include <Wire.h>
+#include "src/BME280Sensor.h"
+#endif
+#if (defined DEVICE_TYPE_SHT31SENSOR)
+#include "src/SHT31.h"
 #endif
 
 // DEFINES
@@ -153,9 +159,13 @@ void setup() {
 #define PIN_LED   A2                                    // inverted
   devices.push_back(new AnalogSensor("AnalogSensor", A5, A2, A6));      // event, action, sensor
 #endif 
-#if (defined DEVICE_TYPE_BME280Sensor                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
+#if (defined DEVICE_TYPE_BME280SENSOR                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
   #define STATUS_LED 1                                  // TX pin
   devices.push_back(new BME280Sensor("Climate", 5000)); // interval
+#endif
+#if (defined DEVICE_TYPE_SHT31SENSOR                    && defined ARDUINO_AMPERKA_WIFI_SLOT)
+#define STATUS_LED 1                                  // TX pin
+  devices.push_back(new SHT31("Climate", 5000)); // interval
 #endif
 
   // Initialize chip
