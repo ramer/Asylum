@@ -1,5 +1,7 @@
 // AnalogSensor.cpp
 
+#if (defined DEVICE_TYPE_ANALOGSENSOR)
+
 #include "AnalogSensor.h"
 
 AnalogSensor::AnalogSensor(String prefix, byte event, ulong interval) : Device(prefix) {
@@ -28,3 +30,5 @@ void AnalogSensor::update() {
   // check state published
   if (_mqttClient && _mqttClient->connected() && millis() - state_publishedtime > state_publishedinterval) { publishState(mqtt_topic_pub, state); }
 }
+
+#endif

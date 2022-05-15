@@ -87,7 +87,7 @@ void Device::handlePayload(String topic, String payload) {
     else {
       ulong newvalue = payload.toInt();
       debug(" - value recieved: %u \n", newvalue);
-	  debug("Free heap size: %u \n\n", ESP.getFreeHeap());
+	    debug("Free heap size: %u \n\n", ESP.getFreeHeap());
 
       updateState(newvalue); 
       publishState(mqtt_topic_pub, state); // force

@@ -1,5 +1,7 @@
 // CSE7766.cpp
 
+#if (defined DEVICE_TYPE_SONOFF_POWR2)
+
 #include "CSE7766.h"
 
 CSE7766::CSE7766(String prefix, ulong interval) : Device(prefix) {
@@ -164,3 +166,5 @@ bool CSE7766::checksum() {
   }
   return checksum == data[23];
 }
+
+#endif

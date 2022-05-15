@@ -1,6 +1,6 @@
 // Encoder.h
 
-#if (defined DEVICE_TYPE_ENCODER && defined ARDUINO_ESP8266_GENERIC)
+#if (defined DEVICE_TYPE_ENCODER)
 
 #ifndef _ENCODER_h
 #define _ENCODER_h

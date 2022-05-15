@@ -1,5 +1,7 @@
 // BME280Sensor.cpp
 
+#if (defined DEVICE_TYPE_BME280SENSOR)
+
 #include "BME280Sensor.h"
 
 BME280Sensor::BME280Sensor(String prefix, ulong interval) : Device(prefix) {
@@ -44,3 +46,5 @@ void BME280Sensor::publishState(String topic, float temp, float hum, float pres)
     state_publishedtime = millis();
   }
 }
+
+#endif

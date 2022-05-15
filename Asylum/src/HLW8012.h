@@ -1,5 +1,7 @@
 // HLW8012.h
 
+#if (defined DEVICE_TYPE_SONOFF_POW)
+
 #ifndef _HLW8012_h
 #define _HLW8012_h
 
@@ -52,5 +54,6 @@ ICACHE_RAM_ATTR static void TimerFunc() {
   sonoffpowinstance->doTimer();
 }
 
+#endif
 #endif
 

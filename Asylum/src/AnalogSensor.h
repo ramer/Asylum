@@ -1,5 +1,7 @@
 // AnalogSensor.h
 
+#if (defined DEVICE_TYPE_ANALOGSENSOR)
+
 #ifndef _ANALOGSENSOR_h
 #define _ANALOGSENSOR_h
 
@@ -24,4 +26,5 @@ protected:
   ulong state_time;
 };
 
+#endif
 #endif

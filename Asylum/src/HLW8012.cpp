@@ -1,5 +1,7 @@
 // HLW8012.cpp
 
+#if (defined DEVICE_TYPE_SONOFF_POW)
+
 #include "HLW8012.h"
 
 HLW8012::HLW8012(String prefix, byte pin_pwr, byte pin_vltcur, byte pin_sw , ulong interval) : Device(prefix) {
@@ -69,3 +71,5 @@ void HLW8012::publishState(String topic, uint32_t power, uint32_t voltage) {
     state_publishedtime = millis();
   }
 }
+
+#endif

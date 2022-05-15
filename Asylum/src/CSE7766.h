@@ -1,5 +1,7 @@
 // CSE7766.h
 
+#if (defined DEVICE_TYPE_SONOFF_POWR2)
+
 #ifndef _CSE7766_h
 #define _CSE7766_h
 
@@ -56,6 +58,6 @@ protected:
   void readData();
 };
 
-
+#endif
 #endif
 

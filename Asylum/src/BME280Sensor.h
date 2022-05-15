@@ -1,5 +1,7 @@
 // BME280Sensor.h
 
+#if (defined DEVICE_TYPE_BME280SENSOR)
+
 #ifndef _BME280Sensor_h
 #define _BME280Sensor_h
 
@@ -29,5 +31,6 @@ protected:
 };
 
 
+#endif
 #endif
 

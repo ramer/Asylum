@@ -59,7 +59,10 @@
     <ClInclude Include="src\BME280Sensor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SHT31.h">
+    <ClInclude Include="src\SHT31.cpp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\IRTransceiver.cpp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -92,9 +95,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\BME280Sensor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\SHT31.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

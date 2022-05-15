@@ -1,3 +1,6 @@
+#define DEBUG
+//#define DEBUG_CORE
+
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
@@ -5,9 +8,6 @@
 #include <DNSServer.h>
 #include <ArduinoJson.h>
 #include <Hash.h>
-
-#include <SPI.h>
-#include <Wire.h>
 
 #include "Button.h"
 #include "Config.h"
@@ -25,6 +25,7 @@
 
 //#define DEVICE_TYPE_SONOFF_TH     // TH10 / TH16
 //#define DEVICE_TYPE_SONOFF_BASIC
+#define DEVICE_TYPE_SONOFF_MINI
 //#define DEVICE_TYPE_SONOFF_POW
 //#define DEVICE_TYPE_SONOFF_POWR2
 //#define DEVICE_TYPE_SONOFF_TOUCH  // T1 / T2 / T3
@@ -37,21 +38,26 @@
 
 //#define DEVICE_TYPE_ANALOGSENSOR
 //#define DEVICE_TYPE_BME280SENSOR
-#define DEVICE_TYPE_SHT31SENSOR
+//#define DEVICE_TYPE_SHT31SENSOR
+//#define DEVICE_TYPE_IRTRANSCEIVER
 
 // ADDITIONAL INCLUDES
 #if (defined DEVICE_TYPE_BME280SENSOR)
+#include <SPI.h>
+#include <Wire.h>
 #include <BME280I2C.h>
 #include "src/BME280Sensor.h"
 #endif
 #if (defined DEVICE_TYPE_SHT31SENSOR)
-#include "src/SHT31.h"
+#include <Wire.h>
+#include "src/SHT31.cpp.h"
+#endif
+#if (defined DEVICE_TYPE_IRTRANSCEIVER)
+#include <IRremote.h>
+#include "src/IRTransceiver.cpp.h"
 #endif
 
 // DEFINES
-
-//#define DEBUG
-//#define DEBUG_CORE
 
 #define WIFI_POWER              20.5
 
@@ -115,6 +121,11 @@ void setup() {
 #define STATUS_LED 13                                  // inverted
   devices.push_back(new Socket("Basic", 0, 12));       // event, action
 #endif
+#if (defined DEVICE_TYPE_SONOFF_MINI)
+#define STATUS_LED 13                                  // inverted
+  devices.push_back(new Socket("Mini", 0, 12));        // event, action
+#endif
+
 #if (defined DEVICE_TYPE_SONOFF_POW)
 #define STATUS_LED 15
 #define STATUS_LED_NOTINVERTED
@@ -160,12 +171,13 @@ void setup() {
   devices.push_back(new AnalogSensor("AnalogSensor", A5, A2, A6));      // event, action, sensor
 #endif 
 #if (defined DEVICE_TYPE_BME280SENSOR                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
-  #define STATUS_LED 1                                  // TX pin
   devices.push_back(new BME280Sensor("Climate", 5000)); // interval
 #endif
 #if (defined DEVICE_TYPE_SHT31SENSOR                    && defined ARDUINO_AMPERKA_WIFI_SLOT)
-#define STATUS_LED 1                                  // TX pin
-  devices.push_back(new SHT31("Climate", 5000)); // interval
+  devices.push_back(new SHT31("Climate", 5000));        // interval
+#endif
+#if (defined DEVICE_TYPE_IRTRANSCEIVER                  && defined ARDUINO_AMPERKA_WIFI_SLOT)
+  devices.push_back(new IRTransceiver("IRTransceiver", 5, 4)); // receive, send
 #endif
 
   // Initialize chip
