@@ -25,7 +25,7 @@
 
 //#define DEVICE_TYPE_SONOFF_TH     // TH10 / TH16
 //#define DEVICE_TYPE_SONOFF_BASIC
-#define DEVICE_TYPE_SONOFF_MINI
+//#define DEVICE_TYPE_SONOFF_MINI
 //#define DEVICE_TYPE_SONOFF_POW
 //#define DEVICE_TYPE_SONOFF_POWR2
 //#define DEVICE_TYPE_SONOFF_TOUCH  // T1 / T2 / T3
@@ -34,7 +34,7 @@
 //#define DEVICE_TYPE_MOTOR
 //#define DEVICE_TYPE_STRIP
 //#define DEVICE_TYPE_ENCODER
-//#define DEVICE_TYPE_DISPLAY_32x8
+#define DEVICE_TYPE_MATRIX32X8
 
 //#define DEVICE_TYPE_ANALOGSENSOR
 //#define DEVICE_TYPE_BME280SENSOR
@@ -55,6 +55,19 @@
 #if (defined DEVICE_TYPE_IRTRANSCEIVER)
 #include <IRremote.h>
 #include "src/IRTransceiver.cpp.h"
+#endif
+#if (defined DEVICE_TYPE_MATRIX32X8)
+#include <SPI.h>
+#include <Wire.h>
+#include <BME280I2C.h>
+#include <RTClib.h>
+#include <NeoPixelBrightnessBus.h>
+#include <ESPAsyncTCP.h>
+#include <ESPAsyncUDP.h>
+#include <TimeLib.h>
+#include <Ticker.h>
+#include <NtpClientLib.h>
+#include "src/Matrix32x8.h"
 #endif
 
 // DEFINES
@@ -159,9 +172,8 @@ void setup() {
 #if (defined DEVICE_TYPE_ENCODER                        && defined ARDUINO_ESP8266_GENERIC)
   devices.push_back(new Encoder("Encoder", 14, 12, 13));// action, A, B
 #endif
-#if (defined DEVICE_TYPE_DISPLAY_32x8                   && defined ARDUINO_ESP8266_GENERIC)
-  //#include "devices/Display_32x8.h"
-  //devices.push_back(new Display_32x8("Display_32x8", 0, 12, 2, 13));        // up, down, left, right
+#if (defined DEVICE_TYPE_MATRIX32X8)
+  devices.push_back(new Matrix32x8("Matrix32x8", 0, 12, 2, 13));        // up, down, left, right
 #endif
 
 // IMPORTANT: use Amperka WiFi Slot
