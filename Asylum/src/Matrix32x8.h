@@ -1,9 +1,9 @@
 // Matrix32x8.h
 
-//#if (defined DEVICE_TYPE_MATRIX32X8)
-
 #ifndef _DISPLAY32X8_h
 #define _DISPLAY32X8_h
+
+#include "Arduino.h"
 
 #include <Wire.h>
 #include <BME280I2C.h>
@@ -14,6 +14,8 @@
 #include <TimeLib.h>
 #include <Ticker.h>
 #include <NtpClientLib.h>
+#include <ArduinoJson.h>
+#include <ESP8266HTTPClient.h>
 
 #include <ESP8266WiFi.h>
 #include <AsyncMqttClient.h>
@@ -40,9 +42,9 @@
 #define PRIMARY_LAST_SLIDE 5
 #define MENU_LAST_SLIDE 3
 
-#define FORECAST_APIKEY "SsoLJaPCnLxZcYqlYrnu5OpglA8S5BzS"
+#define FORECAST_APIKEY "EGGGjl7oxK4Pjqq6LSACnd48K69aaIZ5" // "SsoLJaPCnLxZcYqlYrnu5OpglA8S5BzS"
 #define FORECAST_CITY   "294021"
-#define INTERVAL_UPDATE_FORECAST     	10000
+#define INTERVAL_UPDATE_FORECAST     	20000
 
 #define NTP_TIMEOUT 1500
 #define NTP_SERVER "pool.ntp.org"
@@ -55,7 +57,6 @@ struct point {
   int8_t x;
   int8_t y;
 };
-
 
 class Matrix32x8 : public Device
 {
@@ -80,10 +81,9 @@ public:
 
   BME280I2C bme;
   RTC_DS1307 rtc;
-  AsyncClient* httpClient;
+  //AsyncHTTPRequest request;
 
-  void AsyncClient_onConnect(void* arg, AsyncClient* client);
-  void AsyncClient_onData(void* arg, AsyncClient* client, void* data, size_t len);
+  //static void AsyncHTTPRequest_Callback(void* optParm, AsyncHTTPRequest* request, int readyState);
 
 protected:
   // current state (-1 intro, 0 menu, 1 time, 2 tetris, 3 snake)
@@ -117,8 +117,7 @@ protected:
 
   double forecast_tempmin, forecast_tempmax;
   int forecast_dayicon, forecast_nighticon;
-  unsigned long forecast_time = 0;
-
+  int forecast_updateday = -1;
 
   bool ntp_started = false;
   int8_t ntp_timezone = 3;
@@ -147,7 +146,7 @@ protected:
   void prepareframe_snake();
 
   bool getntp(RTC_DS1307* dt);
-  bool getforecast(double* forecast_tempmin, double* forecast_tempmax, int* forecast_dayicon, int* forecast_nighticon);
+  bool getforecast(int day, int* forecast_updateday, double* forecast_tempmin, double* forecast_tempmax, int* forecast_dayicon, int* forecast_nighticon);
 
   void tetris_reset();
   bool tetris_check_collision(uint16_t f, uint16_t a, int8_t v, int8_t h);
@@ -185,21 +184,6 @@ protected:
   String utf8rus(String source);
 
 };
-
-#pragma region AsyncClient
-
-static Matrix32x8* matrixinstance;
-ICACHE_RAM_ATTR static void AsyncClient_onConnectHandler(void* arg, AsyncClient* client) {
-  matrixinstance->AsyncClient_onConnect(arg, client);
-}
-
-ICACHE_RAM_ATTR static void AsyncClient_onDataHandler(void* arg, AsyncClient* client, void* data, size_t len) {
-  matrixinstance->AsyncClient_onData(arg, client, data, len);
-}
-
-#pragma endregion
-
-
 
 typedef struct ConvLetter {
   char    win1251;
@@ -1336,4 +1320,3 @@ const byte Figures[448] PROGMEM = {
 };
 
 #endif
-//#endif

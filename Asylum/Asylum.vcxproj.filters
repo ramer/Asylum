@@ -68,6 +68,12 @@
     <ClInclude Include="src\Matrix32x8.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Gate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\EMeter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config.cpp">
@@ -101,6 +107,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Matrix32x8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Gate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\EMeter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

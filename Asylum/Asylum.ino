@@ -17,9 +17,9 @@
 #include "src/Strip.h"
 #include "src/Encoder.h"
 #include "src/Socket.h"
-#include "src/AnalogSensor.h"
 #include "src/HLW8012.h"
 #include "src/CSE7766.h"
+
 
 // GLOBAL FIRMWARE CONFIGURATION
 
@@ -31,23 +31,18 @@
 //#define DEVICE_TYPE_SONOFF_TOUCH  // T1 / T2 / T3
 //#define DEVICE_TYPE_SONOFF_S20
 
-//#define DEVICE_TYPE_MOTOR
+//#define DEVICE_TYPE_GATE
 //#define DEVICE_TYPE_STRIP
 //#define DEVICE_TYPE_ENCODER
-#define DEVICE_TYPE_MATRIX32X8
+//#define DEVICE_TYPE_MATRIX32X8
 
-//#define DEVICE_TYPE_ANALOGSENSOR
-//#define DEVICE_TYPE_BME280SENSOR
 //#define DEVICE_TYPE_SHT31SENSOR
 //#define DEVICE_TYPE_IRTRANSCEIVER
+#define DEVICE_TYPE_BME280SENSOR
+//#define DEVICE_TYPE_ANALOGSENSOR
+//#define DEVICE_TYPE_EMETER
 
 // ADDITIONAL INCLUDES
-#if (defined DEVICE_TYPE_BME280SENSOR)
-#include <SPI.h>
-#include <Wire.h>
-#include <BME280I2C.h>
-#include "src/BME280Sensor.h"
-#endif
 #if (defined DEVICE_TYPE_SHT31SENSOR)
 #include <Wire.h>
 #include "src/SHT31.cpp.h"
@@ -67,7 +62,25 @@
 #include <TimeLib.h>
 #include <Ticker.h>
 #include <NtpClientLib.h>
+#include <ArduinoJson.h>
+#include <ESP8266HTTPClient.h>
+
 #include "src/Matrix32x8.h"
+#endif
+#if (defined DEVICE_TYPE_GATE)
+#include "src/Gate.h"
+#endif
+#if (defined DEVICE_TYPE_BME280SENSOR)
+#include <SPI.h>
+#include <Wire.h>
+#include <BME280I2C.h>
+#include "src/BME280Sensor.h"
+#endif
+#if (defined DEVICE_TYPE_ANALOGSENSOR)
+#include "src/AnalogSensor.h"
+#endif
+#if (defined DEVICE_TYPE_EMETER)
+#include "src/EMeter.h"
 #endif
 
 // DEFINES
@@ -78,7 +91,7 @@
 #define PORT_HTTP               80
 
 #define INTERVAL_STATUS_LED     500
-#define INTERVAL_STA_RECONNECT  30000
+#define INTERVAL_STA_RECONNECT  5000
 
 String id;
 String id_macsuffix;
@@ -153,7 +166,7 @@ void setup() {
 #if (defined DEVICE_TYPE_SONOFF_TOUCH)
 #define STATUS_LED 13                                  // inverted
   devices.push_back(new Socket("Touch-1", 0, 12));     // event, action
-  //devices.push_back(new Socket("Touch-2", 9, 5));      // event, action
+  devices.push_back(new Socket("Touch-2", 9, 5));      // event, action
   //devices.push_back(new Socket("Touch-3", 10, 4));     // event, action
 #endif
 #if (defined DEVICE_TYPE_SONOFF_S20)
@@ -162,8 +175,8 @@ void setup() {
 #endif
 
 // IMPORTANT: use Generic ESP8266 Module
-#if (defined DEVICE_TYPE_MOTOR                          && defined ARDUINO_ESP8266_GENERIC)    
-  devices.push_back(new Motor("Motor", 0, 12, 14));     // event, direction, action
+#if (defined DEVICE_TYPE_GATE                          && defined ARDUINO_ESP8266_GENERIC)    
+  devices.push_back(new Gate("Gate", 0, 2));           // open, close
 #endif
 #if (defined DEVICE_TYPE_STRIP                          && defined ARDUINO_ESP8266_GENERIC)
 	//Adafruit_NeoPixel strip = ;
@@ -177,19 +190,20 @@ void setup() {
 #endif
 
 // IMPORTANT: use Amperka WiFi Slot
-#if (defined DEVICE_TYPE_ANALOGSENSOR                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
-#define PIN_MODE	A5	                                  // inverted
-#define PIN_LED   A2                                    // inverted
-  devices.push_back(new AnalogSensor("AnalogSensor", A5, A2, A6));      // event, action, sensor
-#endif 
-#if (defined DEVICE_TYPE_BME280SENSOR                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
-  devices.push_back(new BME280Sensor("Climate", 5000)); // interval
-#endif
 #if (defined DEVICE_TYPE_SHT31SENSOR                    && defined ARDUINO_AMPERKA_WIFI_SLOT)
   devices.push_back(new SHT31("Climate", 5000));        // interval
 #endif
 #if (defined DEVICE_TYPE_IRTRANSCEIVER                  && defined ARDUINO_AMPERKA_WIFI_SLOT)
   devices.push_back(new IRTransceiver("IRTransceiver", 5, 4)); // receive, send
+#endif
+#if (defined DEVICE_TYPE_BME280SENSOR                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
+  devices.push_back(new BME280Sensor("Climate", 5000)); // interval
+#endif
+#if (defined DEVICE_TYPE_ANALOGSENSOR                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
+  devices.push_back(new AnalogSensor("AnalogSensor", A4, 5000)); // event, interval
+#endif 
+#if (defined DEVICE_TYPE_EMETER                         && defined ARDUINO_AMPERKA_WIFI_SLOT)
+  devices.push_back(new EMeter("EMeter", A4));          // event
 #endif
 
   // Initialize chip
@@ -302,13 +316,12 @@ void loop() {
       else {
         if (millis() - last_reconnect_time > INTERVAL_STA_RECONNECT) {
           last_reconnect_time = millis();
-          WiFi.reconnect();
+          StartSTA();
         }
         if (connect_attempts >= 3) { // start AP when client if disconnected for 30 secs
           if (!APEnabled) StartAP();
         }
       }
-
       if (!STAEnabled) StartSTA();
     }
   }
@@ -438,6 +451,7 @@ void WiFi_onStationModeDisconnected(const WiFiEventStationModeDisconnected& evt)
   debug("Disconnected from access point: %s, reason: %u, connect attempt: %u \n", evt.ssid.c_str(), evt.reason, connect_attempts);
   connect_attempts += 1;
   last_reconnect_time = millis();
+  if (WiFi.isConnected()) StopSTA();
   if (config_ready && config.current["mode"].toInt() == 2) mqttClient.disconnect();
 }
 

@@ -1,7 +1,5 @@
 // Matrix32x8.cpp
 
-//#if (defined DEVICE_TYPE_MATRIX32X8)
-
 #include "Matrix32x8.h"
 
 Matrix32x8::Matrix32x8(String prefix, byte event, byte event2, byte event3, byte event4) : Device(prefix), leds(LEDS_COUNT), topo(DISPLAY_WIDTH, DISPLAY_HEIGHT) {
@@ -56,10 +54,7 @@ void Matrix32x8::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config)
   }
 
   debug(" - initializing HTTP forecast client ... ");
-  matrixinstance = this;
-  httpClient = new AsyncClient;
-  httpClient->onConnect(&AsyncClient_onConnectHandler, httpClient);
-  httpClient->onData(&AsyncClient_onDataHandler, httpClient);
+  //request.onReadyStateChange(AsyncHTTPRequest_Callback, this);
   debug("done \n");
 
   debug(" - initializing NeoPixelBrightnessBus ... ");
@@ -107,11 +102,6 @@ void Matrix32x8::update() {
     ntp_time = millis();
     getntp(&rtc);
   }
-
-  //if (millis() - forecast_time > INTERVAL_UPDATE_FORECAST) {
-  //  forecast_time = millis();
-  //  getforecast(&forecast_tempmin, &forecast_tempmax, &forecast_dayicon, &forecast_nighticon);
-  //}
 }
 
 void Matrix32x8::publishState() {
@@ -450,7 +440,7 @@ void Matrix32x8::prepareframe_primary_forecast() {
 
   char f[8];
 
-  if (false) {
+  if (getforecast(datetime.day(), &forecast_updateday, &forecast_tempmin, &forecast_tempmax, &forecast_dayicon, &forecast_nighticon)) {
 
     snprintf(f, sizeof(f) + 1, "%+d%c%+d%c", (int)forecast_tempmin, 176, (int)forecast_tempmax, 176);
     print_smallstring(f, 0, RgbColor(0, 255, 0));
@@ -493,54 +483,145 @@ void Matrix32x8::prepareframe_snake() {
   snake_show_map();
 }
 
+//void Matrix32x8::getforecast() {
+//  static bool requestOpenResult;
+//
+//  if (request.readyState() == readyStateUnsent || request.readyState() == readyStateDone)
+//  {
+//    String url = String("http://dataservice.accuweather.com/forecasts/v1/daily/1day/") + String(FORECAST_CITY) + String("?apikey=") + String(FORECAST_APIKEY) + String("&language=ru-ru&metric=true");
+//    
+//    //requestOpenResult = request.open("GET", "http://worldtimeapi.org/api/timezone/Europe/London.txt");
+//    requestOpenResult = request.open("GET", url.c_str());
+//
+//    if (requestOpenResult)
+//    {
+//      request.send();
+//    }
+//    else
+//    {
+//      debug(" - AsyncHTTPRequest: can't send bad request");
+//    }
+//  }
+//  else
+//  {
+//    debug(" - AsyncHTTPRequest: can't send request");
+//  }
+//}
 
-bool Matrix32x8::getforecast(double* forecast_tempmin, double* forecast_tempmax, int* forecast_dayicon, int* forecast_nighticon) {
+//void Matrix32x8::AsyncClient_Connect(void* arg, AsyncClient* client) {
+//  Matrix32x8* self = (Matrix32x8*)arg;
+//
+//  debug(" - AsyncClient connected, Requesting data ... ");
+//
+//  // request data
+//  if (client->canSend()) {
+//    String req = String("GET /forecasts/v1/daily/1day/") + String(FORECAST_CITY) + String("?apikey=") + String(FORECAST_APIKEY) +
+//      String("&language=ru-ru&metric=true HTTP/1.1\r\n") + String("Host: dataservice.accuweather.com\r\n") + String("Connection: close\r\n\r\n");
+//
+//    if (client->space() > req.length()) {
+//      client->add(req.c_str(), req.length());
+//      client->send();
+//      debug("sent %u bytes \n", req.length());
+//    }
+//    else
+//    {
+//      debug("space exceeded \n");
+//    }
+//  }
+//  else
+//  {
+//    debug("cannot send data \n");
+//  }
+//}
+
+bool Matrix32x8::getforecast(int day, int* forecast_updateday, double* forecast_tempmin, double* forecast_tempmax, int* forecast_dayicon, int* forecast_nighticon) {
   if (WiFi.status() == WL_CONNECTED) {
-    if (httpClient->disconnected()) {
-      httpClient->connect("dataservice.accuweather.com", 80);
+
+    if (*forecast_updateday == day) {
+
+      return true;
+
+    }
+    else {
+
+      HTTPClient http;
+      http.setTimeout(5000);
+      http.begin(String("http://dataservice.accuweather.com/forecasts/v1/daily/1day/") + String(FORECAST_CITY) + String("?apikey=") + String(FORECAST_APIKEY) + String("&language=ru-ru&metric=true"));
+
+      if (http.GET() > 0) {
+
+        DynamicJsonDocument root(2048);
+
+        debug(" - deserializing forecast Json ... ");
+        // Parse JSON object
+        DeserializationError error = deserializeJson(root, http.getString());
+        if (error) {
+          debug("failed: %s \n", error.c_str());
+        }
+        else
+        {
+          if (root.containsKey("DailyForecasts")) {
+            *forecast_tempmin = root["DailyForecasts"][0]["Temperature"]["Minimum"]["Value"];
+            *forecast_tempmax = root["DailyForecasts"][0]["Temperature"]["Maximum"]["Value"];
+            *forecast_dayicon = root["DailyForecasts"][0]["Day"]["Icon"];
+            *forecast_nighticon = root["DailyForecasts"][0]["Night"]["Icon"];
+
+            *forecast_updateday = day;
+            debug("done \n");
+            http.end();
+            return true;
+          }
+          else
+          {
+            debug("failed: Json not contains DailyForecasts key \n");
+          }
+        }
+      }
+      http.end();
+      return false;
     }
   }
-  else
-  {
-    return false;
+  else {
+    return (*forecast_updateday == day);
   }
 }
 
-void Matrix32x8::AsyncClient_onConnect(void* arg, AsyncClient* client) {
-  debug(" - AsyncClient connected, Requesting data ... ");
 
-  // request data
-  if (client->canSend()) {
-    String req = String("GET /forecasts/v1/daily/1day/") + String(FORECAST_CITY) + String("?apikey=") + String(FORECAST_APIKEY) +
-      String("&language=ru-ru&metric=true HTTP/1.1\r\n") + String("Host: dataservice.accuweather.com\r\n") + String("Connection: close\r\n\r\n");
-
-    if (client->space() > req.length()) {
-      client->add(req.c_str(), req.length());
-      client->send();
-      debug("sent %u bytes \n", req.length());
-    }
-    else
-    {
-      debug("space exceeded \n");
-    }
-  }
-  else
-  {
-    debug("cannot send data \n");
-  }
-}
-
-void Matrix32x8::AsyncClient_onData(void* arg, AsyncClient* client, void* data, size_t len) {
-  debug(" - AsyncClient data received: \n\n ");
-  //String resp = "";
-  //for (int i = 0; i < len; i++) {
-  //  resp += String(((uint8_t*)data)[i]);
-  //}
-  //client->close();
-
-  Serial.write((uint8_t*)data, len);
-  debug("\n\n");
-}
+//void Matrix32x8::AsyncHTTPRequest_Callback(void* optParm, AsyncHTTPRequest* request, int readyState) {
+//  Matrix32x8* self = (Matrix32x8*)optParm;
+//  
+//  debug(" - AsyncClient data received(state = %u) \n", readyState);
+//
+//  if (readyState == readyStateDone) {
+//    String response = request->responseText();
+//
+//    debug(" - AsyncClient data response: \n%s\n", response.c_str());
+//
+//    DynamicJsonDocument root(2048);
+//
+//    debug(" - deserializing Json ... ");
+//    // Parse JSON object
+//    DeserializationError error = deserializeJson(root, response);
+//    if (error) {
+//      debug("failed: %s \n", error.c_str());
+//    }
+//    else
+//    {
+//      if (root.containsKey("DailyForecasts")) {
+//        self->forecast_tempmin = root["DailyForecasts"][0]["Temperature"]["Minimum"]["Value"];
+//        self->forecast_tempmax = root["DailyForecasts"][0]["Temperature"]["Maximum"]["Value"];
+//        self->forecast_dayicon = root["DailyForecasts"][0]["Day"]["Icon"];
+//        self->forecast_nighticon = root["DailyForecasts"][0]["Night"]["Icon"];
+//        self->forecast_day = self->rtc.now().day();
+//        debug("done \n");
+//      }
+//      else
+//      {
+//        debug("failed: Json not contains DailyForecasts key \n");
+//      }
+//    }
+//  }
+//}
 
 bool Matrix32x8::getntp(RTC_DS1307* dt) {
   if (WiFi.status() == WL_CONNECTED && !ntp_started) {
@@ -910,10 +991,3 @@ bool Matrix32x8::snake_move() {
 }
 
 #pragma endregion
-
-
-
-
-
-
-//#endif
