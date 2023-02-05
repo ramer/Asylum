@@ -27,7 +27,7 @@
 //#define DEVICE_TYPE_SONOFF_BASIC
 //#define DEVICE_TYPE_SONOFF_MINI
 //#define DEVICE_TYPE_SONOFF_POW
-//#define DEVICE_TYPE_SONOFF_POWR2
+#define DEVICE_TYPE_SONOFF_POWR2
 //#define DEVICE_TYPE_SONOFF_TOUCH  // T1 / T2 / T3
 //#define DEVICE_TYPE_SONOFF_S20
 
@@ -36,21 +36,13 @@
 //#define DEVICE_TYPE_ENCODER
 //#define DEVICE_TYPE_MATRIX32X8
 
-//#define DEVICE_TYPE_SHT31SENSOR
 //#define DEVICE_TYPE_IRTRANSCEIVER
-#define DEVICE_TYPE_BME280SENSOR
+//#define DEVICE_TYPE_SHT31SENSOR
+//#define DEVICE_TYPE_BME280SENSOR
 //#define DEVICE_TYPE_ANALOGSENSOR
 //#define DEVICE_TYPE_EMETER
 
 // ADDITIONAL INCLUDES
-#if (defined DEVICE_TYPE_SHT31SENSOR)
-#include <Wire.h>
-#include "src/SHT31.cpp.h"
-#endif
-#if (defined DEVICE_TYPE_IRTRANSCEIVER)
-#include <IRremote.h>
-#include "src/IRTransceiver.cpp.h"
-#endif
 #if (defined DEVICE_TYPE_MATRIX32X8)
 #include <SPI.h>
 #include <Wire.h>
@@ -69,6 +61,14 @@
 #endif
 #if (defined DEVICE_TYPE_GATE)
 #include "src/Gate.h"
+#endif
+#if (defined DEVICE_TYPE_IRTRANSCEIVER)
+#include <IRremote.h>
+#include "src/IRTransceiver.cpp.h"
+#endif
+#if (defined DEVICE_TYPE_SHT31SENSOR)
+#include <Wire.h>
+#include "src/SHT31.cpp.h"
 #endif
 #if (defined DEVICE_TYPE_BME280SENSOR)
 #include <SPI.h>
@@ -139,80 +139,14 @@ void setup() {
   Serial.setDebugOutput(true);
 #endif
 
-#if (defined DEVICE_TYPE_SONOFF_TH)
-#define STATUS_LED 13                                  // inverted
-  devices.push_back(new Socket("TH", 0, 12));          // event, action
-#endif
-#if (defined DEVICE_TYPE_SONOFF_BASIC)
-#define STATUS_LED 13                                  // inverted
-  devices.push_back(new Socket("Basic", 0, 12));       // event, action
-#endif
-#if (defined DEVICE_TYPE_SONOFF_MINI)
-#define STATUS_LED 13                                  // inverted
-  devices.push_back(new Socket("Mini", 0, 12));        // event, action
-#endif
-
-#if (defined DEVICE_TYPE_SONOFF_POW)
-#define STATUS_LED 15
-#define STATUS_LED_NOTINVERTED
-  devices.push_back(new Socket("Pow", 0, 12));                    // event, action
-  devices.push_back(new HLW8012("Pow-Sensor", 14, 13, 5, 5000));  // power, voltage/current, switch, interval
-#endif
-#if (defined DEVICE_TYPE_SONOFF_POWR2)
-#define STATUS_LED 13
-  devices.push_back(new Socket("Pow", 0, 12));         // event, action
-  devices.push_back(new CSE7766("Pow-Sensor", 5000));  // interval
-#endif
-#if (defined DEVICE_TYPE_SONOFF_TOUCH)
-#define STATUS_LED 13                                  // inverted
-  devices.push_back(new Socket("Touch-1", 0, 12));     // event, action
-  devices.push_back(new Socket("Touch-2", 9, 5));      // event, action
-  //devices.push_back(new Socket("Touch-3", 10, 4));     // event, action
-#endif
-#if (defined DEVICE_TYPE_SONOFF_S20)
-#define STATUS_LED 13                                  // inverted
-  devices.push_back(new Socket("S20", 0, 12));         // event, action
-#endif
-
-// IMPORTANT: use Generic ESP8266 Module
-#if (defined DEVICE_TYPE_GATE                          && defined ARDUINO_ESP8266_GENERIC)    
-  devices.push_back(new Gate("Gate", 0, 2));           // open, close
-#endif
-#if (defined DEVICE_TYPE_STRIP                          && defined ARDUINO_ESP8266_GENERIC)
-	//Adafruit_NeoPixel strip = ;
-	devices.push_back(new Strip("Strip", 13));            // action
-#endif
-#if (defined DEVICE_TYPE_ENCODER                        && defined ARDUINO_ESP8266_GENERIC)
-  devices.push_back(new Encoder("Encoder", 14, 12, 13));// action, A, B
-#endif
-#if (defined DEVICE_TYPE_MATRIX32X8)
-  devices.push_back(new Matrix32x8("Matrix32x8", 0, 12, 2, 13));        // up, down, left, right
-#endif
-
-// IMPORTANT: use Amperka WiFi Slot
-#if (defined DEVICE_TYPE_SHT31SENSOR                    && defined ARDUINO_AMPERKA_WIFI_SLOT)
-  devices.push_back(new SHT31("Climate", 5000));        // interval
-#endif
-#if (defined DEVICE_TYPE_IRTRANSCEIVER                  && defined ARDUINO_AMPERKA_WIFI_SLOT)
-  devices.push_back(new IRTransceiver("IRTransceiver", 5, 4)); // receive, send
-#endif
-#if (defined DEVICE_TYPE_BME280SENSOR                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
-  devices.push_back(new BME280Sensor("Climate", 5000)); // interval
-#endif
-#if (defined DEVICE_TYPE_ANALOGSENSOR                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
-  devices.push_back(new AnalogSensor("AnalogSensor", A4, 5000)); // event, interval
-#endif 
-#if (defined DEVICE_TYPE_EMETER                         && defined ARDUINO_AMPERKA_WIFI_SLOT)
-  devices.push_back(new EMeter("EMeter", A4));          // event
-#endif
-
   // Initialize chip
   debug("\n\n\n");
   uint8_t macarr[6]; WiFi.macAddress(macarr);
   for (int i = sizeof(macarr) - 2; i < sizeof(macarr); ++i) id_macsuffix += String(macarr[i], HEX);
   for (int i = 0; i < sizeof(macarr); ++i) mac += String(macarr[i], HEX);
 
-  id = devices.size() == 1 ? devices[0]->uid_prefix + "-" + id_macsuffix : "ESP-" + id_macsuffix;
+  //id = devices.size() == 1 ? devices[0]->uid_prefix + "-" + id_macsuffix : "ESP-" + id_macsuffix;
+  id = "azilum-" + id_macsuffix;
   mqtt_global_topic_status = id + "/status";
   mqtt_global_topic_setup = id + "/setup";
   mqtt_global_topic_reboot = id + "/reboot";
@@ -262,10 +196,78 @@ void setup() {
   }
     
   // Initialize devices
+
+// IMPORTANT: use Generic ESP8285 Module
+#if (defined DEVICE_TYPE_SONOFF_TH                     && defined ARDUINO_ESP8266_ESP01)
+#define STATUS_LED 13                                  // inverted
+  devices.push_back(new Socket(id, "th", 0, 12));          // event, action
+#endif
+#if (defined DEVICE_TYPE_SONOFF_BASIC                  && defined ARDUINO_ESP8266_ESP01)
+#define STATUS_LED 13                                  // inverted
+  devices.push_back(new Socket(id, "basic", 0, 12));       // event, action
+#endif
+#if (defined DEVICE_TYPE_SONOFF_MINI                   && defined ARDUINO_ESP8266_ESP01)
+#define STATUS_LED 13                                  // inverted
+  devices.push_back(new Socket(id, "mini", 0, 12));        // event, action
+#endif
+#if (defined DEVICE_TYPE_SONOFF_POW                    && defined ARDUINO_ESP8266_ESP01)
+#define STATUS_LED 15
+#define STATUS_LED_NOTINVERTED
+  devices.push_back(new Socket(id, "pow", 0, 12));                    // event, action
+  devices.push_back(new HLW8012(id, "pow-sensor", 14, 13, 5, 5000));  // power, voltage/current, switch, interval
+#endif
+#if (defined DEVICE_TYPE_SONOFF_POWR2                  && defined ARDUINO_ESP8266_ESP01)
+#define STATUS_LED 13
+  devices.push_back(new Socket(id, "pow", 0, 12));         // event, action
+  devices.push_back(new CSE7766(id, "pow-sensor", 5000));  // interval
+#endif
+#if (defined DEVICE_TYPE_SONOFF_TOUCH                  && defined ARDUINO_ESP8266_ESP01)
+#define STATUS_LED 13                                  // inverted
+  devices.push_back(new Socket(id, "touch1", 0, 12));     // event, action
+  devices.push_back(new Socket(id, "touch2", 9, 5));      // event, action
+  devices.push_back(new Socket(id, "touch3", 10, 4));     // event, action
+#endif
+#if (defined DEVICE_TYPE_SONOFF_S20)
+#define STATUS_LED 13                                  // inverted
+  devices.push_back(new Socket("S20", 0, 12));         // event, action
+#endif
+
+// IMPORTANT: use Generic ESP8266 Module
+#if (defined DEVICE_TYPE_GATE                           && defined ARDUINO_ESP8266_GENERIC)    
+  devices.push_back(new Gate("Gate", 0, 2));           // open, close
+#endif
+#if (defined DEVICE_TYPE_STRIP                          && defined ARDUINO_ESP8266_GENERIC)
+  //Adafruit_NeoPixel strip = ;
+  devices.push_back(new Strip("Strip", 13));            // action
+#endif
+#if (defined DEVICE_TYPE_ENCODER                        && defined ARDUINO_ESP8266_GENERIC)
+  devices.push_back(new Encoder("Encoder", 14, 12, 13));// action, A, B
+#endif
+#if (defined DEVICE_TYPE_MATRIX32X8)
+  devices.push_back(new Matrix32x8("Matrix32x8", 0, 12, 2, 13));        // up, down, left, right
+#endif
+
+// IMPORTANT: use Amperka WiFi Slot
+#if (defined DEVICE_TYPE_SHT31SENSOR                    && defined ARDUINO_AMPERKA_WIFI_SLOT)
+  devices.push_back(new SHT31(id, "climate", 5000));    // interval
+#endif
+#if (defined DEVICE_TYPE_IRTRANSCEIVER                  && defined ARDUINO_AMPERKA_WIFI_SLOT)
+  devices.push_back(new IRTransceiver("IRTransceiver", 5, 4)); // receive, send
+#endif
+#if (defined DEVICE_TYPE_BME280SENSOR                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
+  devices.push_back(new BME280Sensor(id, "climate", 5000)); // interval
+#endif
+#if (defined DEVICE_TYPE_ANALOGSENSOR                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
+  devices.push_back(new AnalogSensor("AnalogSensor", A4, 5000)); // event, interval
+#endif 
+#if (defined DEVICE_TYPE_EMETER                         && defined ARDUINO_AMPERKA_WIFI_SLOT)
+  devices.push_back(new EMeter("EMeter", A4));          // event
+#endif
+
   debug("Initializing devices \n");
   for (auto& d : devices) {
     d->initialize(&mqttClient, &config);
-    debug("Initialized: %s \n", d->uid.c_str());
+    debug("Initialized: %s \n", d->uid_prefix.c_str());
   }
 
   //Initialize Web-interface

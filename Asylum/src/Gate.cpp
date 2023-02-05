@@ -2,7 +2,7 @@
 
 #include "Gate.h"
 
-Gate::Gate(String prefix, byte open, byte close) : Device(prefix) {
+Gate::Gate(String id, String prefix, byte open, byte close) : Device(id, prefix) {
   uid_prefix = prefix;
   pin_open = open;
   pin_close = close;
@@ -18,7 +18,7 @@ void Gate::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config) {
   digitalWrite(pin_open, LOW);
   digitalWrite(pin_close, LOW);
 
-  generateUid();
+  generateTopics();
   loadState();
 }
 

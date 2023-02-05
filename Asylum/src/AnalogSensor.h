@@ -1,7 +1,5 @@
 // AnalogSensor.h
 
-#if (defined DEVICE_TYPE_ANALOGSENSOR)
-
 #ifndef _ANALOGSENSOR_h
 #define _ANALOGSENSOR_h
 
@@ -15,7 +13,7 @@
 class AnalogSensor : public Device
 {
 public:
-  AnalogSensor(String prefix, byte event, ulong interval);
+  AnalogSensor(String id, String prefix, byte event, ulong interval);
 
   void initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config);
 
@@ -26,5 +24,4 @@ protected:
   ulong state_time;
 };
 
-#endif
 #endif

@@ -1,7 +1,5 @@
 // CSE7766.h
 
-#if (defined DEVICE_TYPE_SONOFF_POWR2)
-
 #ifndef _CSE7766_h
 #define _CSE7766_h
 
@@ -29,7 +27,7 @@
 class CSE7766 : public Device
 {
 public:
-  CSE7766(String prefix, ulong interval);
+  CSE7766(String id, String prefix, ulong interval);
 
   void initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config);
 
@@ -58,6 +56,5 @@ protected:
   void readData();
 };
 
-#endif
 #endif
 

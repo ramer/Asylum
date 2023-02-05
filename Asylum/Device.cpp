@@ -2,13 +2,15 @@
 
 #include "Device.h"
 
-Device::Device(String prefix, byte event, byte action) {
+Device::Device(String id, String prefix, byte event, byte action) {
+  uid = id;
   uid_prefix = prefix;
   pin_event = event;
   pin_action = action;
 }
 
-Device::Device(String prefix) {
+Device::Device(String id, String prefix) {
+  uid = id;
   uid_prefix = prefix;
 }
 
@@ -20,19 +22,16 @@ void Device::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config) {
 
   pinMode(pin_action, OUTPUT);
 
-  generateUid();
+  generateTopics();
   loadState();
 
   btn.begin(pin_event, true);
 }
 
-void Device::generateUid() {
-  uint8_t mac[6]; WiFi.macAddress(mac);
-  for (int i = sizeof(mac) - 2; i < sizeof(mac); ++i) uid_macsuffix += String(mac[i], HEX);
-  uid = uid_prefix + "-" + uid_macsuffix;
-  uid_filename = "/" + uid + ".json";
-  mqtt_topic_sub = uid + "/pub";
-  mqtt_topic_pub = uid + "/sub";
+void Device::generateTopics() {
+  uid_filename = uid + "-" + uid_prefix + ".json";
+  mqtt_topic_sub = uid + "/" + uid_prefix + "/pub";
+  mqtt_topic_pub = uid + "/" + uid_prefix + "/sub";
   html_control.replace("uid", uid);
 }
 

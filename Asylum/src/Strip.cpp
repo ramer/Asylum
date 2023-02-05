@@ -27,7 +27,7 @@ void Strip::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config) {
   strip->begin();
   strip->show();
 
-  generateUid();
+  generateTopics();
   loadState();
 }
 

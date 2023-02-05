@@ -2,7 +2,7 @@
 
 #include "BME280Sensor.h"
 
-BME280Sensor::BME280Sensor(String prefix, ulong interval) : Device(prefix) {
+BME280Sensor::BME280Sensor(String id, String prefix, ulong interval) : Device(id, prefix) {
   state_publishedinterval = interval;
 
   html_control = "";
@@ -12,11 +12,16 @@ void BME280Sensor::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_confi
   _mqttClient = ptr_mqttClient;
   _config = ptr_config;
 
-  generateUid();
+  generateTopics();
 
   Wire.begin();
-  if (!bme.begin()) {
-    debug("Couldn't find BME280 \n");
+
+  debug("Initializing BME280 ... ");
+  if (bme.begin()) {
+    debug("done \n");
+  }
+  else {
+    debug("failure \n");
   }
 }
 

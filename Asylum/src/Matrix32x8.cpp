@@ -2,7 +2,7 @@
 
 #include "Matrix32x8.h"
 
-Matrix32x8::Matrix32x8(String prefix, byte event, byte event2, byte event3, byte event4) : Device(prefix), leds(LEDS_COUNT), topo(DISPLAY_WIDTH, DISPLAY_HEIGHT) {
+Matrix32x8::Matrix32x8(String id, String prefix, byte event, byte event2, byte event3, byte event4) : Device(id, prefix), leds(LEDS_COUNT), topo(DISPLAY_WIDTH, DISPLAY_HEIGHT) {
   html_control = "";
 
   pin_up = event;
@@ -15,7 +15,7 @@ void Matrix32x8::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config)
   _mqttClient = ptr_mqttClient;
   _config = ptr_config;
 
-  generateUid();
+  generateTopics();
 
   debug(" - initializing buttons ... ");
   btn_up.begin(pin_up, true);

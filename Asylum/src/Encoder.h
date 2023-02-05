@@ -1,7 +1,5 @@
 // Encoder.h
 
-#if (defined DEVICE_TYPE_ENCODER)
-
 #ifndef _ENCODER_h
 #define _ENCODER_h
 
@@ -14,7 +12,7 @@
 class Encoder : public Device
 {
 public:
-  Encoder(String prefix, byte action, byte eventA, byte eventB);
+  Encoder(String id, String prefix, byte action, byte eventA, byte eventB);
 
   void initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config);
 
@@ -43,7 +41,5 @@ static Encoder* encoderinstance;
 ICACHE_RAM_ATTR static void EncoderInterruptFunc() {
   encoderinstance->doEncoder();
 }
-
-#endif
 
 #endif

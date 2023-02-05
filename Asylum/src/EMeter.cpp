@@ -2,7 +2,7 @@
 
 #include "EMeter.h"
 
-EMeter::EMeter(String prefix, byte event) : Device(prefix) {
+EMeter::EMeter(String id, String prefix, byte event) : Device(id, prefix) {
   pin_event = event;
   //state_publishedinterval = interval;
 
@@ -16,7 +16,7 @@ void EMeter::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config) {
   pinMode(pin_event, INPUT);
   state = analogRead(pin_event);
 
-  generateUid();
+  generateTopics();
 }
 
 void EMeter::update() {

@@ -1,7 +1,5 @@
 // IRTransceiver.cpp.h
 
-#if (defined DEVICE_TYPE_IRTRANSCEIVER)
-
 #ifndef _IRTransceiver_cpp_h
 #define _IRTransceiver_cpp_h
 
@@ -13,7 +11,7 @@
 class IRTransceiver : public Device
 {
 public:
-  IRTransceiver(String prefix, byte receive, byte send);
+  IRTransceiver(String id, String prefix, byte receive, byte send);
 
   void initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config);
 
@@ -44,7 +42,7 @@ protected:
   void sendCode(storedIRDataStruct* aIRDataToSend);
 };
 
-IRTransceiver::IRTransceiver(String prefix, byte receive, byte send) : Device(prefix) {
+IRTransceiver::IRTransceiver(String id, String prefix, byte receive, byte send) : Device(id, prefix) {
   pin_receive = receive;
   pin_send = send;
 
@@ -55,7 +53,7 @@ void IRTransceiver::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_conf
   _mqttClient = ptr_mqttClient;
   _config = ptr_config;
 
-  generateUid();
+  generateTopics();
 
   IrReceiver.begin(pin_receive, DISABLE_LED_FEEDBACK); // Start the receiver, enable feedback LED, take LED feedback pin from the internal boards definition
   IrSender.begin(pin_send, DISABLE_LED_FEEDBACK); // Specify send pin and enable feedback LED at default feedback LED pin
@@ -143,5 +141,4 @@ void IRTransceiver::sendCode(storedIRDataStruct* aIRDataToSend) {
   }
 }
 
-#endif
 #endif

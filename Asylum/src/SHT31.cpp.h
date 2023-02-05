@@ -10,8 +10,6 @@
 //  by www.amperka.ru
 /****************************************************************************/
 
-#if (defined DEVICE_TYPE_SHT31SENSOR)
-
 #ifndef _SHT31_cpp_h
 #define _SHT31_cpp_h
 
@@ -45,7 +43,7 @@
 class SHT31 : public Device
 {
 public:
-  SHT31(String prefix, ulong interval, int i2cAddr = JUMPER_OFF);
+  SHT31(String id, String prefix, ulong interval, int i2cAddr = JUMPER_OFF);
 
   void initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config);
 
@@ -77,7 +75,7 @@ protected:
   float _humidity;
 };
 
-SHT31::SHT31(String prefix, ulong interval, int i2cAddr) : Device(prefix) {
+SHT31::SHT31(String id, String prefix, ulong interval, int i2cAddr) : Device(id, prefix) {
   state_publishedinterval = interval;
 
   html_control = "";
@@ -89,7 +87,7 @@ void SHT31::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config) {
   _mqttClient = ptr_mqttClient;
   _config = ptr_config;
 
-  generateUid();
+  generateTopics();
 
   begin();
 }
@@ -253,6 +251,5 @@ uint8_t SHT31::_checkCRC8(const uint8_t* data, int len) {
   return crc;
 }
 
-#endif
 #endif
 

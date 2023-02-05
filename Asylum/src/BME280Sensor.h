@@ -10,10 +10,12 @@
 #include <AsyncMqttClient.h>
 #include "../Device.h"
 
+#define debug(format, ...) Serial.printf_P((PGM_P)F(format), ## __VA_ARGS__)
+
 class BME280Sensor : public Device
 {
 public:
-  BME280Sensor(String prefix, ulong interval);
+  BME280Sensor(String id, String prefix, ulong interval);
 
   void initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config);
 

@@ -14,8 +14,8 @@
 class Device
 {
 public:
-  Device(String prefix, byte event, byte action);
-  Device(String prefix);
+  Device(String id, String prefix, byte event, byte action);
+  Device(String id, String prefix);
   virtual ~Device();
 
   virtual void initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config);
@@ -37,7 +37,7 @@ public:
 
   String uid;
   String uid_prefix;
-  String uid_macsuffix;
+  //String uid_macsuffix;
   String uid_filename;
   String mqtt_topic_pub;
   String mqtt_topic_sub;
@@ -50,7 +50,7 @@ public:
     </div>)~";
 
 protected:
-  virtual void generateUid();
+  virtual void generateTopics();
   virtual void loadState();
   virtual void saveState();
 

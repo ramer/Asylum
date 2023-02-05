@@ -13,7 +13,7 @@
 class EMeter : public Device
 {
 public:
-  EMeter(String prefix, byte event);
+  EMeter(String id, String prefix, byte event);
 
   void initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config);
 

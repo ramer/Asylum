@@ -1,10 +1,8 @@
 // HLW8012.cpp
 
-#if (defined DEVICE_TYPE_SONOFF_POW)
-
 #include "HLW8012.h"
 
-HLW8012::HLW8012(String prefix, byte pin_pwr, byte pin_vltcur, byte pin_sw , ulong interval) : Device(prefix) {
+HLW8012::HLW8012(String id, String prefix, byte pin_pwr, byte pin_vltcur, byte pin_sw , ulong interval) : Device(id, prefix) {
   pin_event = pin_pwr;
   pin_voltagecurrent = pin_vltcur;
   pin_switch = pin_sw;
@@ -17,7 +15,7 @@ void HLW8012::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config) {
   _mqttClient = ptr_mqttClient;
   _config = ptr_config;
 
-  generateUid();
+  generateTopics();
 
   sonoffpowinstance = this;
 
@@ -71,5 +69,3 @@ void HLW8012::publishState(String topic, uint32_t power, uint32_t voltage) {
     state_publishedtime = millis();
   }
 }
-
-#endif

@@ -61,7 +61,7 @@ struct point {
 class Matrix32x8 : public Device
 {
 public:
-  Matrix32x8(String prefix, byte event, byte event2, byte event3, byte event4);
+  Matrix32x8(String id, String prefix, byte event, byte event2, byte event3, byte event4);
 
   void initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config);
 

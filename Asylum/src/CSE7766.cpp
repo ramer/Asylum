@@ -1,10 +1,8 @@
 // CSE7766.cpp
 
-#if (defined DEVICE_TYPE_SONOFF_POWR2)
-
 #include "CSE7766.h"
 
-CSE7766::CSE7766(String prefix, ulong interval) : Device(prefix) {
+CSE7766::CSE7766(String id, String prefix, ulong interval) : Device(id, prefix) {
   state_publishedinterval = interval;
 
   html_control = "";
@@ -14,7 +12,7 @@ void CSE7766::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config) {
   _mqttClient = ptr_mqttClient;
   _config = ptr_config;
 
-  generateUid();
+  generateTopics();
 
   Serial.begin(CSE7766_BAUDRATE);
 
@@ -166,5 +164,3 @@ bool CSE7766::checksum() {
   }
   return checksum == data[23];
 }
-
-#endif

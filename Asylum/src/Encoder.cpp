@@ -1,10 +1,8 @@
 // Encoder.cpp
 
-#if (defined DEVICE_TYPE_ENCODER)
-
 #include "Encoder.h"
 
-Encoder::Encoder(String prefix, byte action, byte eventA, byte eventB) : Device(prefix) {
+Encoder::Encoder(String id, String prefix, byte action, byte eventA, byte eventB) : Device(id, prefix) {
   pin_action = action;
   pin_eventA = eventA;
   pin_eventB = eventB;
@@ -33,7 +31,7 @@ void Encoder::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config) {
   attachInterrupt(digitalPinToInterrupt(pin_eventA), EncoderInterruptFunc, CHANGE);
   attachInterrupt(digitalPinToInterrupt(pin_eventB), EncoderInterruptFunc, CHANGE);
 
-  generateUid();
+  generateTopics();
   loadState();
 }
 
@@ -96,5 +94,3 @@ void Encoder::updateState(ulong state_new) {
 
   debug(" - state changed to %u \n", state_new);
 }
-
-#endif

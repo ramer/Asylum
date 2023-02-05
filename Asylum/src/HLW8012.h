@@ -1,7 +1,5 @@
 // HLW8012.h
 
-#if (defined DEVICE_TYPE_SONOFF_POW)
-
 #ifndef _HLW8012_h
 #define _HLW8012_h
 
@@ -16,7 +14,7 @@
 class HLW8012 : public Device
 {
 public:
-  HLW8012(String prefix, byte pin_pwr, byte pin_vltcur, byte pin_sw, ulong interval);
+  HLW8012(String id, String prefix, byte pin_pwr, byte pin_vltcur, byte pin_sw, ulong interval);
 
   void initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config);
 
@@ -54,6 +52,5 @@ ICACHE_RAM_ATTR static void TimerFunc() {
   sonoffpowinstance->doTimer();
 }
 
-#endif
 #endif
 
