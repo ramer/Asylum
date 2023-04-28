@@ -6,7 +6,7 @@
 #include <ESPAsyncWebServer.h>
 #include <AsyncMqttClient.h>
 #include <DNSServer.h>
-#include <ArduinoJson.h>
+//#include <ArduinoJson.h>
 #include <Hash.h>
 
 #include "Button.h"
@@ -14,11 +14,11 @@
 #include "Debug.h"
 #include "Device.h"
 
-#include "src/Strip.h"
-#include "src/Encoder.h"
-#include "src/Socket.h"
-#include "src/HLW8012.h"
-#include "src/CSE7766.h"
+//#include "src/Strip.h"
+//#include "src/Encoder.h"
+//#include "src/Socket.h"
+//#include "src/HLW8012.h"
+//#include "src/CSE7766.h"
 
 
 // GLOBAL FIRMWARE CONFIGURATION
@@ -27,11 +27,11 @@
 //#define DEVICE_TYPE_SONOFF_BASIC
 //#define DEVICE_TYPE_SONOFF_MINI
 //#define DEVICE_TYPE_SONOFF_POW
-#define DEVICE_TYPE_SONOFF_POWR2
+//#define DEVICE_TYPE_SONOFF_POWR2
 //#define DEVICE_TYPE_SONOFF_TOUCH  // T1 / T2 / T3
 //#define DEVICE_TYPE_SONOFF_S20
 
-//#define DEVICE_TYPE_GATE
+#define DEVICE_TYPE_GATE
 //#define DEVICE_TYPE_STRIP
 //#define DEVICE_TYPE_ENCODER
 //#define DEVICE_TYPE_MATRIX32X8
@@ -80,6 +80,8 @@
 #include "src/AnalogSensor.h"
 #endif
 #if (defined DEVICE_TYPE_EMETER)
+#include <TroykaOLED.h>
+#include <TroykaRTC.h>
 #include "src/EMeter.h"
 #endif
 
@@ -232,19 +234,20 @@ void setup() {
   devices.push_back(new Socket("S20", 0, 12));         // event, action
 #endif
 
-// IMPORTANT: use Generic ESP8266 Module
-#if (defined DEVICE_TYPE_GATE                           && defined ARDUINO_ESP8266_GENERIC)    
-  devices.push_back(new Gate("Gate", 0, 2));           // open, close
+
+#if (defined DEVICE_TYPE_GATE                           && defined ARDUINO_ESP8266_ESP01)    
+  #define STATUS_LED 13                                  // inverted
+  devices.push_back(new Gate(id, "gate", 12, 5));           // open, close
 #endif
 #if (defined DEVICE_TYPE_STRIP                          && defined ARDUINO_ESP8266_GENERIC)
   //Adafruit_NeoPixel strip = ;
-  devices.push_back(new Strip("Strip", 13));            // action
+  devices.push_back(new Strip(id, "Strip", 13));            // action
 #endif
 #if (defined DEVICE_TYPE_ENCODER                        && defined ARDUINO_ESP8266_GENERIC)
-  devices.push_back(new Encoder("Encoder", 14, 12, 13));// action, A, B
+  devices.push_back(new Encoder(id, "Encoder", 14, 12, 13));// action, A, B
 #endif
 #if (defined DEVICE_TYPE_MATRIX32X8)
-  devices.push_back(new Matrix32x8("Matrix32x8", 0, 12, 2, 13));        // up, down, left, right
+  devices.push_back(new Matrix32x8(id, "Matrix32x8", 0, 12, 2, 13));        // up, down, left, right
 #endif
 
 // IMPORTANT: use Amperka WiFi Slot
@@ -252,16 +255,16 @@ void setup() {
   devices.push_back(new SHT31(id, "climate", 5000));    // interval
 #endif
 #if (defined DEVICE_TYPE_IRTRANSCEIVER                  && defined ARDUINO_AMPERKA_WIFI_SLOT)
-  devices.push_back(new IRTransceiver("IRTransceiver", 5, 4)); // receive, send
+  devices.push_back(new IRTransceiver(id, "IRTransceiver", 5, 4)); // receive, send
 #endif
 #if (defined DEVICE_TYPE_BME280SENSOR                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
   devices.push_back(new BME280Sensor(id, "climate", 5000)); // interval
 #endif
 #if (defined DEVICE_TYPE_ANALOGSENSOR                   && defined ARDUINO_AMPERKA_WIFI_SLOT)
-  devices.push_back(new AnalogSensor("AnalogSensor", A4, 5000)); // event, interval
+  devices.push_back(new AnalogSensor(id, "AnalogSensor", A4, 5000)); // event, interval
 #endif 
 #if (defined DEVICE_TYPE_EMETER                         && defined ARDUINO_AMPERKA_WIFI_SLOT)
-  devices.push_back(new EMeter("EMeter", A4));          // event
+  devices.push_back(new EMeter(id, "emeter", A4));          // event
 #endif
 
   debug("Initializing devices \n");
@@ -468,6 +471,7 @@ void mqttClient_connect() {
   mqttClient.setCredentials(config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str());
   mqttClient.setClientId(id.c_str());
   mqttClient.setWill(mqtt_global_topic_status.c_str(), 1, true, willmessage);
+  mqttClient.setMaxTopicLength(64);
   debug("configured \n");
 
   debug("Connecting to MQTT server: %s as %s , auth %s : %s \n", config.current["mqttserver"].c_str(), id.c_str(), config.current["mqttlogin"].c_str(), config.current["mqttpassword"].c_str());

@@ -19,12 +19,12 @@ void Gate::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config) {
   digitalWrite(pin_close, LOW);
 
   generateTopics();
-  loadState();
+  //loadState();
 }
 
 void Gate::update() {
   // check state saved
-  if (!state_saved && millis() - state_savedtime > INTERVAL_STATE_SAVE) { saveState(); }
+  //if (!state_saved && millis() - state_savedtime > INTERVAL_STATE_SAVE) { saveState(); }
 
   // check pinset
   if (pinset && millis() - pinsettime > INTERVAL_PINSET) { 
@@ -52,10 +52,10 @@ void Gate::updateState(ulong state_new) {
   pinsettime = millis();
   pinset = true;
 
-  state_saved = false;
+  //state_saved = false;
   state_published = false;
 
-  state_savedtime = millis();
+  //state_savedtime = millis();
   state_publishedtime = millis();
 
   debug(" - state changed to %u \n", state_new);
