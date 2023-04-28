@@ -2,9 +2,12 @@
 
 #include "Gate.h"
 
-Gate::Gate(String id, String prefix, byte open, byte close) : Device(id, prefix) {
+Gate::Gate(String id, String prefix, byte btnopen, byte open, byte btnclose, byte close) : Device(id, prefix) {
   uid_prefix = prefix;
+
+  pin_btnopen = btnopen;
   pin_open = open;
+  pin_btnclose = btnclose;
   pin_close = close;
 };
 
@@ -20,9 +23,23 @@ void Gate::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config) {
 
   generateTopics();
   //loadState();
+
+  btnopen.begin(pin_btnopen, true);
+  btnclose.begin(pin_btnclose, true);
 }
 
 void Gate::update() {
+  // process buttons
+  if (btnopen.update() == DOWN) {
+    debug(" - open button down \n");
+    updateState(1);
+  }
+
+  if (btnclose.update() == DOWN) {
+    debug(" - close button down \n");
+    updateState(0);
+  }
+
   // check state saved
   //if (!state_saved && millis() - state_savedtime > INTERVAL_STATE_SAVE) { saveState(); }
 

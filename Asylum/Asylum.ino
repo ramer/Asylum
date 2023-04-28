@@ -30,8 +30,9 @@
 //#define DEVICE_TYPE_SONOFF_POWR2
 //#define DEVICE_TYPE_SONOFF_TOUCH  // T1 / T2 / T3
 //#define DEVICE_TYPE_SONOFF_S20
+#define DEVICE_TYPE_SONOFF_4CHPROR3
 
-#define DEVICE_TYPE_GATE
+//#define DEVICE_TYPE_GATE
 //#define DEVICE_TYPE_STRIP
 //#define DEVICE_TYPE_ENCODER
 //#define DEVICE_TYPE_MATRIX32X8
@@ -59,8 +60,9 @@
 
 #include "src/Matrix32x8.h"
 #endif
-#if (defined DEVICE_TYPE_GATE)
+#if (defined DEVICE_TYPE_SONOFF_4CHPROR3)
 #include "src/Gate.h"
+#include "src/Socket.h"
 #endif
 #if (defined DEVICE_TYPE_IRTRANSCEIVER)
 #include <IRremote.h>
@@ -233,12 +235,14 @@ void setup() {
 #define STATUS_LED 13                                  // inverted
   devices.push_back(new Socket("S20", 0, 12));         // event, action
 #endif
-
-
-#if (defined DEVICE_TYPE_GATE                           && defined ARDUINO_ESP8266_ESP01)    
-  #define STATUS_LED 13                                  // inverted
-  devices.push_back(new Gate(id, "gate", 12, 5));           // open, close
+#if (defined DEVICE_TYPE_SONOFF_4CHPROR3               && defined ARDUINO_ESP8266_ESP01)    
+  #define STATUS_LED 13                                 // inverted
+  devices.push_back(new Gate(id, "gate", 0, 12, 9, 5)); // open, close
+  devices.push_back(new Socket(id, "r3", 10, 4));       // event, action
+  devices.push_back(new Socket(id, "r4", 14, 15));      // event, action
 #endif
+
+
 #if (defined DEVICE_TYPE_STRIP                          && defined ARDUINO_ESP8266_GENERIC)
   //Adafruit_NeoPixel strip = ;
   devices.push_back(new Strip(id, "Strip", 13));            // action
