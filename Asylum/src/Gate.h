@@ -22,8 +22,7 @@
 #include <ESP8266WiFi.h>
 #include <AsyncMqttClient.h>
 #include "../Device.h"
-
-#define debug(format, ...) Serial.printf_P((PGM_P)F(format), ## __VA_ARGS__)
+#include "../Debug.h"
 
 #define INTERVAL_PINSET 500
 

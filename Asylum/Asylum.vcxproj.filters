@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Asylum.ino" />
-    <None Include="html.ino" />
-    <None Include="http.ino" />
     <None Include="data\www\index.html" />
     <None Include="data\www\script.js" />
     <None Include="data\www\style.css" />
@@ -115,6 +112,9 @@
     <ClCompile Include="src\EMeter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Asylum.ino" />
+    <ClCompile Include="html.ino" />
+    <ClCompile Include="http.ino" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="data\www\favicon.ico">

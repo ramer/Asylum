@@ -30,8 +30,9 @@ void Device::initialize(AsyncMqttClient* ptr_mqttClient, Config* ptr_config) {
 
 void Device::generateTopics() {
   uid_filename = uid + "-" + uid_prefix + ".json";
-  mqtt_topic_sub = uid + "/" + uid_prefix + "/pub";
-  mqtt_topic_pub = uid + "/" + uid_prefix + "/sub";
+  mqtt_topic_sub = _config->current["mqttlogin"] + "/" + uid + "/" + uid_prefix + "/pub";
+  mqtt_topic_pub = _config->current["mqttlogin"] + "/" + uid + "/" + uid_prefix + "/sub";
+  mqtt_topic_type = _config->current["mqttlogin"] + "/" + uid + "/" + uid_prefix + "/type";
   html_control.replace("uid", uid);
 }
 
@@ -44,6 +45,9 @@ void Device::update() {
 
   // check state saved
   if (!state_saved && millis() - state_savedtime > INTERVAL_STATE_SAVE) { saveState(); }
+
+  // check type published
+  if (_mqttClient && _mqttClient->connected() && !type_published) { publishType(mqtt_topic_type, type); }
 
   // check state published
   if (_mqttClient && _mqttClient->connected() && !state_published && millis() - state_publishedtime > INTERVAL_STATE_PUBLISH) { publishState(mqtt_topic_pub, state); }
@@ -86,7 +90,6 @@ void Device::handlePayload(String topic, String payload) {
     else {
       ulong newvalue = payload.toInt();
       debug(" - value recieved: %u \n", newvalue);
-	    debug("Free heap size: %u \n\n", ESP.getFreeHeap());
 
       updateState(newvalue); 
       publishState(mqtt_topic_pub, state); // force
@@ -98,6 +101,17 @@ void Device::subscribe() {
   if (!_mqttClient) return;
   if (_mqttClient->connected()) {
     _mqttClient->subscribe(mqtt_topic_sub.c_str(), 0);
+  }
+}
+
+void Device::publishType(String topic, String type) {
+  if (!_mqttClient || type_published) return;
+  if (_mqttClient->connected()) {
+    _mqttClient->publish(topic.c_str(), 1, true, type.c_str());
+
+    debug(" - message sent [%s] %s \n", topic.c_str(), type.c_str());
+
+    type_published = true;
   }
 }
 
@@ -159,7 +173,3 @@ void Device::saveState() {
 
   _config->saveState(uid_filename, states);
 }
-
-//void Device::onUpdateState(std::function<void(ulong)> onUpdateStateCallback) {
-//  updateStateCallback = onUpdateStateCallback;
-//}

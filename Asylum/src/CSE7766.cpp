@@ -4,7 +4,7 @@
 
 CSE7766::CSE7766(String id, String prefix, ulong interval) : Device(id, prefix) {
   state_publishedinterval = interval;
-
+  type = "";
   html_control = "";
 };
 

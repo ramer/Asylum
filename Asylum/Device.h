@@ -7,6 +7,7 @@
 #include <AsyncMqttClient.h>
 #include "Config.h"
 #include "Button.h"
+#include "Debug.h"
 
 #define INTERVAL_STATE_PUBLISH		    200
 #define INTERVAL_STATE_SAVE		        1000
@@ -26,7 +27,8 @@ public:
   virtual void handlePayload(String topic, String payload);
 
   virtual void subscribe();
-  virtual void publishState(String topic, ulong statepayload);
+  virtual void publishType(String topic, String type);
+  virtual void publishState(String topic, ulong state);
 
   //void onUpdateState(std::function<void(ulong)> onUpdateStateCallback);
 
@@ -37,10 +39,10 @@ public:
 
   String uid;
   String uid_prefix;
-  //String uid_macsuffix;
   String uid_filename;
   String mqtt_topic_pub;
   String mqtt_topic_sub;
+  String mqtt_topic_type;
 
   String html_control = R"~(
     <div class="field-group">
@@ -54,11 +56,12 @@ protected:
   virtual void loadState();
   virtual void saveState();
 
-  //std::function<void(ulong)> updateStateCallback;
+  String type = "device";
 
   AsyncMqttClient* _mqttClient;
   Config* _config;
 
+  bool  type_published = false;
   bool  state_published = false;
   ulong	state_publishedtime = 0;
 

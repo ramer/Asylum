@@ -30,9 +30,8 @@
 //#define DEVICE_TYPE_SONOFF_POWR2
 //#define DEVICE_TYPE_SONOFF_TOUCH  // T1 / T2 / T3
 //#define DEVICE_TYPE_SONOFF_S20
-#define DEVICE_TYPE_SONOFF_4CHPROR3
+//#define DEVICE_TYPE_SONOFF_4CHPROR3
 
-//#define DEVICE_TYPE_GATE
 //#define DEVICE_TYPE_STRIP
 //#define DEVICE_TYPE_ENCODER
 //#define DEVICE_TYPE_MATRIX32X8
@@ -59,6 +58,19 @@
 #include <ESP8266HTTPClient.h>
 
 #include "src/Matrix32x8.h"
+#endif
+#if (defined DEVICE_TYPE_SONOFF_TH)
+#include "src/Socket.h"
+#endif
+#if (defined DEVICE_TYPE_SONOFF_BASIC)
+#include "src/Socket.h"
+#endif
+#if (defined DEVICE_TYPE_SONOFF_MINI)
+#include "src/Socket.h"
+#endif
+#if (defined DEVICE_TYPE_SONOFF_POWR2)
+#include "src/Socket.h"
+#include "src/CSE7766.h"
 #endif
 #if (defined DEVICE_TYPE_SONOFF_4CHPROR3)
 #include "src/Gate.h"
@@ -203,15 +215,15 @@ void setup() {
 
 // IMPORTANT: use Generic ESP8285 Module
 #if (defined DEVICE_TYPE_SONOFF_TH                     && defined ARDUINO_ESP8266_ESP01)
-#define STATUS_LED 13                                  // inverted
+#define STATUS_LED 13                                      // inverted
   devices.push_back(new Socket(id, "th", 0, 12));          // event, action
 #endif
 #if (defined DEVICE_TYPE_SONOFF_BASIC                  && defined ARDUINO_ESP8266_ESP01)
-#define STATUS_LED 13                                  // inverted
+#define STATUS_LED 13                                      // inverted
   devices.push_back(new Socket(id, "basic", 0, 12));       // event, action
 #endif
-#if (defined DEVICE_TYPE_SONOFF_MINI                   && defined ARDUINO_ESP8266_ESP01)
-#define STATUS_LED 13                                  // inverted
+#if (defined DEVICE_TYPE_SONOFF_MINI)//                   && defined ARDUINO_ESP8266_ESP01)
+#define STATUS_LED 13                                      // inverted
   devices.push_back(new Socket(id, "mini", 0, 12));        // event, action
 #endif
 #if (defined DEVICE_TYPE_SONOFF_POW                    && defined ARDUINO_ESP8266_ESP01)
@@ -466,6 +478,10 @@ void WiFi_onStationModeDisconnected(const WiFiEventStationModeDisconnected& evt)
 
 void mqttClient_connect() {
   if (mqttClient.connected()) return;
+
+  mqtt_global_topic_status = config.current["mqttlogin"] + "/" + id + "/status";
+  mqtt_global_topic_setup = config.current["mqttlogin"] + "/" + id + "/setup";
+  mqtt_global_topic_reboot = config.current["mqttlogin"] + "/" + id + "/reboot";
 
   static char willmessage[128];
   snprintf(willmessage, sizeof(willmessage), "{\"mac\":\"%s\",\"status\":\"off\",\"desc\":\"%s\"}", mac.c_str(), config.current["description"].c_str());

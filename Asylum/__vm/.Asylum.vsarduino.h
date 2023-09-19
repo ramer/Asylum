@@ -6,29 +6,30 @@
 			All non-arduino files created by visual micro and all visual studio project or solution files can be freely deleted and are not required to compile a sketch (do not delete your own code!).
 			Note: debugger breakpoints are stored in '.sln' or '.asln' files, knowledge of last uploaded breakpoints is stored in the upload.vmps.xml file. Both files are required to continue a previous debug session without needing to compile and upload again
 	
-	Hardware: Generic ESP8285 Module, Platform=esp8266, Package=esp8266
+	Hardware: Amperka WiFi Slot(esp8266_wifi_slot), Platform=esp8266, Package=esp8266
 */
 
 #if defined(_VMICRO_INTELLISENSE)
 
 #ifndef _VSARDUINO_H_
 #define _VSARDUINO_H_
-#define __ESP8266_esp8266__
-#define __ESP8266_ESP8266__
-#define __ets__
-#define ICACHE_FLASH
+#define __ESP8266_esp8266__ 1
+#define __ESP8266_ESP8266__ 1
+#define __ets__ 1
+#define ICACHE_FLASH 1
+#define BEARSSL_SSL_BASIC 1
 #define NONOSDK22x_190703 1
 #define F_CPU 80000000L
-#define LWIP_OPEN_SRC
+#define LWIP_OPEN_SRC 1
 #define TCP_MSS 536
 #define LWIP_FEATURES 1
 #define LWIP_IPV6 0
-#define ARDUINO 108013
-#define ARDUINO_ESP8266_ESP01
-#define ARDUINO_ARCH_ESP8266
-#define LED_BUILTIN 0
-#define FLASHMODE_DOUT
-#define ESP8266
+#define ARDUINO 108010
+#define ARDUINO_AMPERKA_WIFI_SLOT 1
+#define ARDUINO_ARCH_ESP8266 1
+#define ARDUINO_BOARD "AMPERKA_WIFI_SLOT"
+#define FLASHMODE_DIO 1
+#define ESP8266 1
 #define __cplusplus 201103L
 #undef __cplusplus
 #define __cplusplus 201103L
@@ -94,15 +95,38 @@ typedef long __UINTPTR_TYPE__ ;
 typedef long __SIZE_TYPE__ 	;
 typedef long __PTRDIFF_TYPE__;
 
+// Additions needed for v3.0.0 Core - Needs to be conditional on it being this core really!!
+#ifndef isnan
+#undef _Lockit
+#undef __STDC__
+#define __STDC__ 1
+#define __CHAR_BIT__ 1
+extern int isinf(double);
+extern int isnan(double);
+extern int fpclassify(double);
+extern int signbit(double);
+extern int isfinite(double);
+extern int isnormal(double);
+extern int isgreater(double, double);
+extern int isgreaterequal(double);
+extern int isless(double, double);
+extern int islessequal(double, double);
+extern int islessgreater(double, double);
+extern int isunordered(double, double);
+#endif
 
 #include "new"
 #include "Esp.h"
 
+class VM_DBG {
+public:
+	// Send a Message to the Serial Monitor via WiFi Connection 
+	void sendUserMessage(const char* theMessage) {};
+} MicroDebug;
 
-#include "arduino.h"
-#include <common.h> 
+#include <arduino.h>
 #include <pins_arduino.h> 
-#include <initD9D10Pins.cpp> 
+#include <analogRead.cpp> 
 
 #include "..\generic\Common.h"
 #include "..\generic\pins_arduino.h"
@@ -116,8 +140,8 @@ typedef long __PTRDIFF_TYPE__;
 #define interrupts() sei()
 #define noInterrupts() cli()
 
-#include "Asylum.ino"
-#include "html.ino"
-#include "http.ino"
+#include "..\Asylum.ino"
+#include "..\html.ino"
+#include "..\http.ino"
 #endif
 #endif
